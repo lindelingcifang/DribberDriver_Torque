@@ -1,0 +1,80 @@
+cmake_minimum_required(VERSION 3.22)
+
+project(CM4_stm32_RTOS LANGUAGES C CXX ASM)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
+
+# Keep C++ available for Task sources
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_subdirectory(Board)
+
+file(GLOB TASK_SOURCES CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/Task/*.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Task/*.cpp
+)
+
+file(GLOB TASK_HEADERS CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/Task/*.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Task/*.hpp
+)
+
+file(GLOB COMPONENT_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Component/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Component/*.cpp
+)
+
+file(GLOB COMPONENT_HEADERS CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Component/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Component/*.hpp
+)
+
+file(GLOB COMMUNICATION_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Communication/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Communication/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Communication/can/*.cpp
+)
+
+file(GLOB COMMUNICATION_HEADERS CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Communication/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Communication/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Communication/can/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Communication/can/*.hpp
+)
+
+file(GLOB INTERFACE_HEADERS CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/Interface/*.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Interface/*.hpp
+)
+
+file(GLOB GENERAL_HEADERS CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/*.h
+	${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
+)
+
+if(TARGET CM4_stm32_RTOS)
+    target_sources(CM4_stm32_RTOS PRIVATE 
+        ${TASK_SOURCES} 
+        ${TASK_HEADERS}
+        ${COMPONENT_SOURCES} 
+        ${COMPONENT_HEADERS}
+        ${COMMUNICATION_SOURCES} 
+        ${COMMUNICATION_HEADERS} 
+        ${INTERFACE_HEADERS} 
+        ${GENERAL_HEADERS}
+    )
+    target_include_directories(CM4_stm32_RTOS PRIVATE 
+        ${TASK_DIR} 
+        ${CMAKE_CURRENT_SOURCE_DIR}/Component
+        ${CMAKE_CURRENT_SOURCE_DIR}/Communication 
+        ${CMAKE_CURRENT_SOURCE_DIR}/Communication/can 
+        ${CMAKE_CURRENT_SOURCE_DIR}/Interface 
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+else()
+	message(FATAL_ERROR "Target CM4_stm32_RTOS not found after adding Board directory.")
+endif()
