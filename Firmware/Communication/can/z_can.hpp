@@ -66,7 +66,10 @@ private:
     
     // Hardware supports at most 28 filters unless we do optimizations. For now
     // we don't need that many.
-    std::array<ZCANSubscription, 8> subscriptions_;
+    std::array<ZCANSubscription, 28> subscriptions_;
+    // Filter banks are shared between CAN1 and CAN2 on STM32F4xx. We allocate
+    // half the banks to each CAN peripheral.
+    uint32_t start_bank_ = 0;
     CAN_HandleTypeDef *handle_ = nullptr;
 };
 

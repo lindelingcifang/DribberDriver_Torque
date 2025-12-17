@@ -26,6 +26,10 @@ bool ZCAN::reinit() {
 bool ZCAN::start(CAN_HandleTypeDef* handle) {
     handle_ = handle;
 
+    #if defined(STM32F405xx)
+    start_bank_ = (handle_->Instance == CAN1) ? 0 : 14; // STM32F405 has 28 filter banks shared between CAN1 and CAN2
+    #endif
+
     handle_->Init.Prescaler = CAN_FREQ / config_.baud_rate / (config_.sjw + config_.time_seg1 + config_.time_seg2);
     if (!reinit()) {
         return false;
@@ -71,7 +75,7 @@ void ZCAN::process_rx_fifo(uint32_t fifo) {
         size_t fifo1_idx = 0;
 
         // Find the triggered subscription item based on header.FilterMatchIndex
-        auto it = std::find_if(subscriptions_.begin(), subscriptions_.end(), [&](auto& s) {
+        auto it = std::find_if(subscriptions_.begin() + start_bank_, subscriptions_.end(), [&](auto& s) {
             size_t current_idx = (s.fifo == 0 ? fifo0_idx : fifo1_idx)++;
             return (header.FilterMatchIndex == current_idx) && (s.fifo == fifo);
         });
@@ -111,7 +115,7 @@ bool ZCAN::send_message(const can_Message_t &txmsg) {
 //}
 
 bool ZCAN::subscribe(const MsgIdFilterSpecs& filter, on_can_message_cb_t callback, void* ctx, CanSubscription** handle) {
-    auto it = std::find_if(subscriptions_.begin(), subscriptions_.end(), [](auto& subscription) {
+    auto it = std::find_if(subscriptions_.begin() + start_bank_, subscriptions_.end(), [](auto& subscription) {
         return subscription.fifo == kCanFifoNone;
     });
 

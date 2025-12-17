@@ -22,6 +22,39 @@ void system_init() {
     SystemClock_Config();
 }
 
+void CanFilter_Init(CAN_HandleTypeDef *hcan)
+{
+    CAN_FilterTypeDef canfilter;
+
+    canfilter.FilterMode = CAN_FILTERMODE_IDMASK;
+    canfilter.FilterScale = CAN_FILTERSCALE_32BIT;
+
+    // filtrate any ID you want here
+    canfilter.FilterIdHigh = 0x0000;
+    canfilter.FilterIdLow = 0x0000;
+    canfilter.FilterMaskIdHigh = 0x0000;
+    canfilter.FilterMaskIdLow = 0x0000;
+
+    canfilter.FilterActivation = ENABLE;
+    canfilter.SlaveStartFilterBank = 14;
+
+    // use different filter for can1&can2
+    if (hcan == &hcan1)
+    {
+        canfilter.FilterBank = 0;
+        canfilter.FilterFIFOAssignment = CAN_FilterFIFO0;
+    }
+    if (hcan == &hcan2)
+    {
+        canfilter.FilterBank = 14;
+        canfilter.FilterFIFOAssignment = CAN_FilterFIFO1;
+    }
+    if (HAL_CAN_ConfigFilter(hcan, &canfilter) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
 bool board_init() {
     // Initialize all configured peripherals
     MX_GPIO_Init();
@@ -60,14 +93,14 @@ bool board_init() {
     optflow_filter.fifo = CAN_RX_FIFO0;
     can1_bus.subscribe(optflow_filter, on_optflow_rx, nullptr, nullptr);
     
-    // // Subscribe to motor feedback (CAN2, IDs 0x201-0x205)
-    // for (uint16_t motor_id = 0x201; motor_id <= 0x205; motor_id++) {
-    //     MsgIdFilterSpecs motor_filter;
-    //     motor_filter.id = motor_id;
-    //     motor_filter.mask = 0x7FF;
-    //     motor_filter.fifo = CAN_RX_FIFO1;
-    //     can2_bus.subscribe(motor_filter, on_motor_fb_rx, nullptr, nullptr);
-    // }
+    // Subscribe to motor feedback (CAN2, IDs 0x201-0x205)
+    MsgIdFilterSpecs motor_filter;
+    motor_filter.id = (uint16_t)0x201;
+    motor_filter.mask = 0x7F8;  // Match IDs 0x201 to 0x205
+    motor_filter.fifo = CAN_RX_FIFO1;
+    can2_bus.subscribe(motor_filter, on_motor_fb_rx, nullptr, nullptr);
+
+    // CanFilter_Init(&hcan2);
 
     HAL_UARTEx_ReceiveToIdle_DMA(&huart4, robot.imu_rx_data, IMU_RX_DATA_LENGTH);
 

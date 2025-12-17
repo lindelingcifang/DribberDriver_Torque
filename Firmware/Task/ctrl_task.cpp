@@ -81,7 +81,7 @@ void StartCrtlTask(void *argument) {
                 // Use ZCAN to send motor commands
                 if (osSemaphoreAcquire(sem_can_txHandle, 5) == osOK) {
                     can_Message_t tx_msg;
-                    tx_msg.id = robot.wheel_motor[0]->get_tx_id();
+                    tx_msg.id = robot.wheel_motor[3]->get_tx_id();
                     tx_msg.isExt = false;
                     tx_msg.rtr = false;
                     tx_msg.len = 8;
