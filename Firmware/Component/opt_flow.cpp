@@ -12,6 +12,11 @@ void OptFlow::reset() {
     initialized_ = false;
 }
 
+float cosdt_debug=0;
+float sindt_debug=0;
+
+float dy_rot_debug=0;
+
 void OptFlow::process(const Data_t& sensor_data, float imu_omega_z, float imu_angle_z) {
     // Update timestamp
     state_.time_ms = HAL_GetTick();
@@ -60,6 +65,12 @@ void OptFlow::process(const Data_t& sensor_data, float imu_omega_z, float imu_an
     float sindt = sinf(state_.delta_yaw);
     float dx_rot = (cosdt - 1.0f) * OFFSET_X - sindt * OFFSET_Y;
     float dy_rot = sindt * OFFSET_X + (cosdt - 1.0f) * OFFSET_Y;
+
+    sindt_debug = sindt;
+    cosdt_debug = cosdt;
+
+    dy_rot_debug = dy_rot;
+
     state_.e = state_.delta_x - dx_rot;
     state_.f = state_.delta_y - dy_rot;
     

@@ -3,6 +3,9 @@
 #include "z_main.h"
 #include <cstring>
 
+float imu_last_time = 0;
+float imu_dt = 0;
+
 // IMU data structure
 struct ImuData {
     float data[9];  // ax, ay, az, gx, gy, gz, roll, pitch, yaw
@@ -18,20 +21,23 @@ void StartImuRxTask(void *argument) {
         // IMU data arrives via UART DMA - processed in UART callback
         // This task monitors IMU health and processes decoded data
         
-        // Acquire robot state mutex
-        if (osMutexAcquire(mtx_robot_stateHandle, 10) == osOK) {
+        if (osSemaphoreAcquire(sem_imu_readyHandle, osWaitForever) == osOK) {
+            float current_time = TIM11->CNT / 1000000.0f;  // Current time in seconds
+            imu_dt = (current_time > imu_last_time) ? (current_time - imu_last_time) : (current_time + (0.01f - imu_last_time));
+            imu_last_time = current_time;
+            // Acquire robot state mutex
+            if (osMutexAcquire(mtx_robot_stateHandle, 10) == osOK) {
+                
+                // Decode IMU data from UART buffer
+                imu.decode(robot.imu_rx_data);
+                
+                // // Signal IMU data ready
+                // osSemaphoreRelease(sem_imu_readyHandle);
+                
+                osMutexRelease(mtx_robot_stateHandle);
+            }
             
-            // Decode IMU data from UART buffer
-            imu.decode(robot.imu_rx_data);
-            
-            // Signal IMU data ready
-            osSemaphoreRelease(sem_imu_readyHandle);
-            
-            osMutexRelease(mtx_robot_stateHandle);
         }
-        
-        // Run at moderate rate (~200Hz)
-        osDelay(5);
     }
 }
 

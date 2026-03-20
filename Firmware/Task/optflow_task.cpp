@@ -16,6 +16,8 @@ float dt_s;
 float delta_yaw, angle;
 float e, f;
 float all;
+float imu_omega_z;
+float imu_angle_z;
 
 
 extern "C" {
@@ -34,8 +36,8 @@ void StartOptFlowRxTask(void *argument) {
             // if (osMutexAcquire(mtx_robot_stateHandle, 10) == osOK) {
                 
             // Get IMU data
-            float imu_omega_z = imu.get_data(IMU::kOmegaZ);
-            float imu_angle_z = imu.get_data(IMU::kAngleZ);
+            imu_omega_z = imu.get_data(IMU::kOmegaZ);
+            imu_angle_z = imu.get_data(IMU::kAngleZ);
             
             // Process optical flow data
             opt_flow.process(data, imu_omega_z, imu_angle_z);

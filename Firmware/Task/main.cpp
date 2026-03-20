@@ -12,7 +12,7 @@ Robot robot{};
 
 ZCAN can1_bus;
 ZCAN can2_bus;
-IMU imu;
+IMU imu(&hspi2);
 OptFlow opt_flow;
 
 extern "C" int main(void) {

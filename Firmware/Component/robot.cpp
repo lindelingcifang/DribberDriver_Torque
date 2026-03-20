@@ -153,10 +153,10 @@ void Robot::pi_decode_spi() {
     memcpy(&SpiRx, spi_rx_data, sizeof(SpiRx));
 
     // Decode robot velocity commands from Pi (if implemented)
-    // for (uint8_t i = 0; i < 2; i++) {
-    //     robot_vel[i] = SpiRx.vel[i] / 1000.0f;
-    // }
-    // robot_vel[2] = SpiRx.vel[2] / 100.0f;
+    for (uint8_t i = 0; i < 2; i++) {
+        robot_vel[i] = SpiRx.vel[i] / 1000.0f;
+    }
+    robot_vel[2] = SpiRx.vel[2] / 100.0f;
 }
 
 void Robot::pi_encode_spi() {

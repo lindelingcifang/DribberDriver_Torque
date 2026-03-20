@@ -65,8 +65,8 @@ bool board_init() {
     MX_CAN1_Init();
     MX_CAN2_Init();
     MX_I2C1_Init();
-    MX_I2C2_Init();
     MX_SPI1_Init();
+    MX_SPI2_Init();
     MX_UART5_Init();
     MX_USART1_UART_Init();
     MX_USART2_UART_Init();
@@ -77,6 +77,8 @@ bool board_init() {
     MX_IWDG_Init();
     MX_TIM1_Init();
     MX_TIM13_Init();
+
+    imu.lsm6ds3_init();
 
     // Initialize ZCAN for CAN1 and CAN2
     if (!can1_bus.start(&hcan1)) {
@@ -100,7 +102,7 @@ bool board_init() {
     motor_filter.fifo = CAN_RX_FIFO1;
     can2_bus.subscribe(motor_filter, on_motor_fb_rx, nullptr, nullptr);
 
-    // CanFilter_Init(&hcan2);
+    HAL_SPI_TransmitReceive(imu.hspi_, (uint8_t*)imu.lsm6ds3_tx_data, (uint8_t*)imu.lsm6ds3_rx_data, 4, HAL_MAX_DELAY);
 
     HAL_UARTEx_ReceiveToIdle_DMA(&huart4, robot.imu_rx_data, IMU_RX_DATA_LENGTH);
 
@@ -145,10 +147,17 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+    if (hspi == imu.hspi_) {
+        // Handle IMU SPI transfer complete
+        osSemaphoreRelease(sem_imu_readyHandle);
+    }
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
+    if (hspi->Instance != SPI1) {
+        return;
+    }
     if (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_MODF))
     {
         __HAL_SPI_CLEAR_MODFFLAG(hspi);
@@ -159,6 +168,7 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
     }
 }
 
+extern DMA_HandleTypeDef *hdma_uart4_rx;
 // Due to high priority of DMA interrupts, FreeRTOS functions are not allowed here.
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
@@ -170,7 +180,31 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         /* read DR to clear RXNE; don't create an unused variable */
         (void)huart->Instance->DR;
 
-        HAL_UARTEx_ReceiveToIdle_DMA(&huart4, robot.imu_rx_data, IMU_RX_DATA_LENGTH);
+        if(huart->RxEventType == HAL_UART_RXEVENT_TC) {
+            HAL_UARTEx_ReceiveToIdle_DMA(&huart4, robot.imu_rx_data, IMU_RX_DATA_LENGTH);
+            osSemaphoreRelease(sem_imu_readyHandle);
+        }
+
+        
+    }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1) {
+        
+    }
+
+    if (huart->Instance == UART4) {
+        volatile uint8_t tmp = 0;
+    }
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == imu.data_ready_pin_) {
+        // Handle IMU data ready interrupt
+        HAL_SPI_TransmitReceive_DMA(imu.hspi_, (uint8_t*)imu.lsm6ds3_tx_data, (uint8_t*)imu.lsm6ds3_rx_data, 4);
     }
 }
 
