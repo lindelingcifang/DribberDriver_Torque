@@ -12,10 +12,11 @@ extern "C" {
 
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
+#include "freertos_vars.h"
 
 #define PI_UART_TX_DATA_LENGTH 3
 #define PI_UART_RX_DATA_LENGTH 7
-#define SPI_LENGTH 38
+#define SPI_LENGTH 32
 
 #define INFRARED_THRESHOLD (3.3f)
 
@@ -29,7 +30,8 @@ const float cap_k = 113.73;
 #include "interfaces.hpp"
 
 // Component includes
-#include "Component/motor.hpp"
+#include "Component/wheel_motor.hpp"
+#include "Component/dribble_motor.hpp"
 #include "Component/imu.hpp"
 #include "Component/opt_flow.hpp"
 #include "Component/robot.hpp"

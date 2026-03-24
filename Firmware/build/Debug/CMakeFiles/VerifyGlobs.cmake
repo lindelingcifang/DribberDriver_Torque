@@ -104,10 +104,11 @@ endif()
 # COMPONENT_SOURCES at CMakeLists.txt:26 (file)
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/*.cpp")
 set(OLD_GLOB
+  "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/dribble_motor.cpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/imu.cpp"
-  "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/motor.cpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/opt_flow.cpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/robot.cpp"
+  "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/wheel_motor.cpp"
   )
 if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   message("-- GLOB mismatch!")
@@ -126,10 +127,11 @@ endif()
 # COMPONENT_HEADERS at CMakeLists.txt:31 (file)
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/*.hpp")
 set(OLD_GLOB
+  "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/dribble_motor.hpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/imu.hpp"
-  "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/motor.hpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/opt_flow.hpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/robot.hpp"
+  "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/wheel_motor.hpp"
   )
 if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   message("-- GLOB mismatch!")

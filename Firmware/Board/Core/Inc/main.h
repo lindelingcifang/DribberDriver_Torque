@@ -57,6 +57,11 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define TIM2_PERIOD_CLOCKS 2000
+#define CHIP_Pin GPIO_PIN_3
+#define CHIP_GPIO_Port GPIOB
+#define SHOOT_Pin GPIO_PIN_4
+#define SHOOT_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

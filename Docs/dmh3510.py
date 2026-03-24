@@ -423,7 +423,8 @@ class MainWindow(QWidget):
         # Connection controls
         conn_layout = QHBoxLayout()
         conn_layout.addWidget(QLabel("Serial/Port:"))
-        self.port_edit = QLineEdit("COM13")
+        default_port = "can0" if sys.platform.startswith("linux") else "COM13"
+        self.port_edit = QLineEdit(default_port)
         conn_layout.addWidget(self.port_edit)
         conn_layout.addWidget(QLabel("Baud (slcan serial):"))
         self.baud_edit = QLineEdit("115200")
@@ -624,7 +625,8 @@ class MainWindow(QWidget):
     def toggle_connect(self):
         if self.bus is None:
             # connect
-            port = self._fill_default_if_empty(self.port_edit, "COM13")
+            default_port = "can0" if sys.platform.startswith("linux") else "COM13"
+            port = self._fill_default_if_empty(self.port_edit, default_port)
             try:
                 baud = self._int_from_edit(self.baud_edit, "115200", "Serial baud")
             except ValueError as e:
@@ -632,12 +634,17 @@ class MainWindow(QWidget):
                 return
             canrate = int(self.canrate_combo.currentText())
             try:
-                # create slcan Bus via python-can
-                # bustype 'slcan' should use pyserial under the hood
-                self.log(f"Opening slcan on {port} serial {baud} bps, CAN {canrate} bps...")
-                self.bus = can.interface.Bus(interface='slcan', channel=port, bitrate=canrate, serial_baudrate=baud)
+                if port.startswith("can"):
+                    # Use socketcan for CAN interfaces in Linux
+                    self.log(f"Opening socketcan on {port}, CAN {canrate} bps...")
+                    self.bus = can.interface.Bus(interface='socketcan', channel=port, bitrate=canrate)
+                else:
+                    # create slcan Bus via python-can
+                    # bustype 'slcan' should use pyserial under the hood
+                    self.log(f"Opening slcan on {port} serial {baud} bps, CAN {canrate} bps...")
+                    self.bus = can.interface.Bus(interface='slcan', channel=port, bitrate=canrate, serial_baudrate=baud)
             except Exception as e:
-                QMessageBox.critical(self, "Connect failed", f"Failed to open slcan: {e}")
+                QMessageBox.critical(self, "Connect failed", f"Failed to open interface: {e}")
                 self.bus = None
                 return
             # start reader thread

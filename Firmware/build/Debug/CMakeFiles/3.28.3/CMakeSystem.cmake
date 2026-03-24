@@ -1,6 +1,6 @@
-set(CMAKE_HOST_SYSTEM "Linux-6.14.0-37-generic")
+set(CMAKE_HOST_SYSTEM "Linux-6.17.0-19-generic")
 set(CMAKE_HOST_SYSTEM_NAME "Linux")
-set(CMAKE_HOST_SYSTEM_VERSION "6.14.0-37-generic")
+set(CMAKE_HOST_SYSTEM_VERSION "6.17.0-19-generic")
 set(CMAKE_HOST_SYSTEM_PROCESSOR "x86_64")
 
 include("/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/cmake/gcc-arm-none-eabi.cmake")

@@ -2,7 +2,8 @@
 
 #include "Communication/can/canbus.hpp"
 #include "Component/opt_flow.hpp"
-#include "Component/motor.hpp"
+#include "Component/wheel_motor.hpp"
+#include "Component/dribble_motor.hpp"
 #include "freertos_vars.h"
 #include <cstring>
 
@@ -22,11 +23,8 @@ void on_optflow_rx(void* ctx, const can_Message_t& msg) {
 // Callback for motor feedback messages (CAN IDs 0x201-0x205)
 void on_motor_fb_rx(void* ctx, const can_Message_t& msg) {
     
-    Motor::Feedback_t fb;
-    fb.motor_id = msg.id;
-    fb.len = msg.len;
-    memcpy(fb.data, msg.buf, msg.len);
+    can_Message_t fb_msg = msg; // Make a copy
     
     // Send to queue (non-blocking from ISR context)
-    osMessageQueuePut(q_motor_fbHandle, &fb, 0, 0);
+    osMessageQueuePut(q_motor_fbHandle, &fb_msg, 0, 0);
 }

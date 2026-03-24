@@ -56,6 +56,7 @@ osMessageQueueId_t q_imu_dataHandle;
 osSemaphoreId_t sem_can_txHandle;
 osSemaphoreId_t sem_ctrl_triggerHandle;
 osSemaphoreId_t sem_imu_readyHandle;
+osSemaphoreId_t sem_spi_triggerHandle;
 
 // Mutexes
 osMutexId_t mtx_robot_stateHandle;
@@ -156,6 +157,7 @@ void MX_FREERTOS_Init(void) {
   sem_can_txHandle = osSemaphoreNew(1, 1, NULL);
   sem_ctrl_triggerHandle = osSemaphoreNew(1, 0, NULL);
   sem_imu_readyHandle = osSemaphoreNew(1, 0, NULL);
+  sem_spi_triggerHandle = osSemaphoreNew(1, 0, NULL);
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */

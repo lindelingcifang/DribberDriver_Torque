@@ -22,7 +22,6 @@ struct __attribute__((packed)) stm32_to_CM4_spi
     int8_t battery_vol;
     int16_t cap_vol;
     int16_t wheel[4];
-    int16_t wheel_ref[4];
 };
 
 class Robot: public RobotIntf {
@@ -36,12 +35,15 @@ public:
     void ik_solve();
     void motion_planner(const double _dt);
 
+    void watchdog_feed();
+    bool watchdog_check();
+
     float infra_ADC1_val = 0;
     float bat_ADC2_val = 0;
     float cap_ADC3_val = 0;
 
-    Motor* wheel_motor[4];
-    Motor* dribbler;
+    MotorDMH3510* wheel_motors[4];
+    DibbleMotorBase* dribbler;
     PID* wheel_PID_controllers[4];
     PID* wheel_vel_PID_controllers[4];
     PID* dribbler_PID_controller;
@@ -68,6 +70,7 @@ public:
 
     float wheel_PID[3] = {0.000, 0.005, 0};
     float wheel_vel_PID[3] = {0.5, 0.1, 0};
+    float wheel_vel_limit = 2000; // rpm
 
     // m/s
     float robot_vel[3] = {0};
@@ -79,6 +82,10 @@ public:
     float ik_solve_inv_b[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
     uint32_t spi_error_count = 0;
+
+    // Watchdog
+    uint32_t watchdog_current_value_ = 0;
+    uint32_t watchdog_timeout_ = 200 * 4;
 };
 
 #endif // __ROBOT_HPP

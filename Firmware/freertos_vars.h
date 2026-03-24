@@ -13,6 +13,7 @@ extern osMessageQueueId_t q_imu_dataHandle;
 extern osSemaphoreId_t sem_can_txHandle;
 extern osSemaphoreId_t sem_ctrl_triggerHandle;
 extern osSemaphoreId_t sem_imu_readyHandle;
+extern osSemaphoreId_t sem_spi_triggerHandle;
 
 // Mutexes
 extern osMutexId_t mtx_robot_stateHandle;

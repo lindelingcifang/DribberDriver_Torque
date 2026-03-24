@@ -1,57 +1,47 @@
 
 
-Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/motor_task.cpp:37:17, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/ctrl_task.cpp:59:5, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/ctrl_task.cpp:110:9, State=BP_STATE_DISABLED
 Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Communication/can/z_can.cpp:151:5, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp:136, State=BP_STATE_ON
-Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp:205, State=BP_STATE_ON
-GraphedExpression="imu_omega_z", Color=#e56a6f
-GraphedExpression="imu_angle_z", Color=#35792b
-GraphedExpression="imu_dt", Color=#769dda, Show=0
-GraphedExpression="raw_X", Color=#b14f0d, Show=0
-GraphedExpression="raw_Y", Color=#b3c38e, Show=0
-GraphedExpression="dt_s", Color=#ab7b05, Show=0
-GraphedExpression="raw_vx", Color=#7fd3b7, Show=0
-GraphedExpression="raw_vy", Color=#50328f, Show=0
-OpenDocument="main.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/main.cpp", Line=7
-OpenDocument="tasks.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3418
-OpenDocument="motor.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/motor.cpp", Line=54
-OpenDocument="port.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c", Line=399
-OpenDocument="board.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp", Line=121
-OpenDocument="imu.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/imu.cpp", Line=13
-OpenDocument="stm32f4xx_hal_uart.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c", Line=3109
-OpenDocument="startup_stm32f405xx.s", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/startup_stm32f405xx.s", Line=54
-OpenDocument="opt_flow.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/opt_flow.cpp", Line=0
-OpenDocument="can_callbacks.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/can_callbacks.cpp", Line=0
-OpenDocument="list.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/list.c", Line=139
-OpenDocument="cmsis_os2.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c", Line=153
-OpenDocument="imu_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/imu_task.cpp", Line=0
-OpenDocument="spi_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/spi_task.cpp", Line=0
-OpenDocument="stl_algo.h", FilePath="/usr/include/newlib/c++/13.2.1/bits/stl_algo.h", Line=3906
-OpenDocument="stl_algobase.h", FilePath="/usr/include/newlib/c++/13.2.1/bits/stl_algobase.h", Line=2052
-OpenDocument="predefined_ops.h", FilePath="/usr/include/newlib/c++/13.2.1/bits/predefined_ops.h", Line=301
-OpenDocument="optflow_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/optflow_task.cpp", Line=0
-OpenDocument="stm32f4xx_hal_dma.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c", Line=885
-OpenDocument="stm32f4xx_hal_tim.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c", Line=3954
-OpenDocument="motor_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/motor_task.cpp", Line=0
-OpenDocument="ctrl_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/ctrl_task.cpp", Line=52
-OpenDocument="queue.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/queue.c", Line=730
+Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp:81, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp:163:5, State=BP_STATE_DISABLED
+GraphedExpression="target_vx_debug", Color=#e56a6f, Show=0
+GraphedExpression="target_vy_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#35792b, Show=0
+GraphedExpression="target_vw_debug", Color=#769dda, Show=0
+GraphedExpression="spi_trigger_dt_us", Color=#b14f0d, Show=0
+GraphedExpression="wheel_vel_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#b3c38e, Show=0
+GraphedExpression="robot_real_vx_debug", Color=#ab7b05, Show=0
+GraphedExpression="id_debug", Color=#7fd3b7, Show=0
+GraphedExpression="exec_time_us", Color=#50328f
+GraphedExpression="wait_us_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#c587a5, Show=0
+OpenDocument="main.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/main.cpp", Line=0
 OpenDocument="health_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/health_task.cpp", Line=0
-OpenDocument="robot.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/robot.cpp", Line=180
-OpenDocument="stm32f4xx_hal_can.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c", Line=404
+OpenDocument="wheel_motor.hpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/wheel_motor.hpp", Line=22
+OpenDocument="motor_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/motor_task.cpp", Line=7
+OpenDocument="ctrl_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/ctrl_task.cpp", Line=147
+OpenDocument="tasks.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3420
+OpenDocument="startup_stm32f405xx.s", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/startup_stm32f405xx.s", Line=49
+OpenDocument="stm32f4xx_hal_spi.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c", Line=1281
+OpenDocument="stm32f4xx_it.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Core/Src/stm32f4xx_it.c", Line=323
+OpenDocument="board.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp", Line=69
+OpenDocument="spi_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/spi_task.cpp", Line=0
+OpenDocument="stm32f4xx_hal.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c", Line=310
+OpenDocument="robot.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/robot.cpp", Line=167
+OpenDocument="wheel_motor.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/wheel_motor.cpp", Line=46
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=704, h=366, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Source Files", DockArea=LEFT, x=0, y=0, w=424, h=257, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=704, h=204, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=2, w=424, h=329, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=1, w=424, h=260, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=BOTTOM, x=0, y=0, w=2428, h=469, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=2428, h=469, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="500 ms / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="110;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="1100;-115", CodeGraphLegendShown=0, CodeGraphLegendPosition="1144;0"
-OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=2, w=704, h=276, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=704, h=329, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Source Files", DockArea=RIGHT, x=0, y=2, w=704, h=414, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=704, h=416, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=1030, h=859, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=1030, h=728, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=0, y=0, w=3840, h=358, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=3840, h=358, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="110;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="3526;-115", CodeGraphLegendShown=0, CodeGraphLegendPosition="3449;0"
+OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=3, w=704, h=416, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
-TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" imu_omega_z";" imu_angle_z";" imu_dt";" raw_X";" raw_Y";" dt_s";" raw_vx";" raw_vy"], ColWidths=[100;100;100;100;100;100;100;100;100;100]
-TableHeader="Data Sampling Setup", SortCol="Value", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[144;100;100;210;224;114;141;161;1234]
-TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
-TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;238;546]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" target_vx_debug";" target_vy_debug";" target_vw_debug";" spi_trigger_dt_us";" wheel_vel_debug";" robot_real_vx_debug";" id_debug";" exec_time_us";" wait_us_debug"], ColWidths=[100;100;100;100;100;100;100;100;100;100;100]
+TableHeader="Data Sampling Setup", SortCol="Max", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[144;322;100;210;224;114;141;161;2424]
+TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;680]
+TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;238;630]
 TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[246;196;224;140;182;135]
 TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[442;126;100;100;1890]
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
@@ -60,12 +50,16 @@ TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", Visib
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
 TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[284;230;133;1492]
 WatchedExpression="robot", Window=Watched Data 1
-WatchedExpression="handle_", Window=Watched Data 1
-WatchedExpression="hal_filter", Window=Watched Data 1
-WatchedExpression="rxmsg", Window=Watched Data 1
-WatchedExpression="filter", Window=Watched Data 1
-WatchedExpression="raw_X", Window=Watched Data 1
-WatchedExpression="raw_Y", Window=Watched Data 1
-WatchedExpression="header", Window=Watched Data 1
-WatchedExpression="dt_us", Window=Watched Data 1
-WatchedExpression="dt_s", Window=Watched Data 1
+WatchedExpression="msg", Window=Watched Data 1
+WatchedExpression="wheel_motors", Window=Watched Data 1
+WatchedExpression="WHEEL_MOTOR_PARAMS", Window=Watched Data 1
+WatchedExpression="config_", Window=Watched Data 1
+WatchedExpression="i", Window=Watched Data 1
+WatchedExpression="hspi1", Window=Watched Data 1
+WatchedExpression="hspi", Window=Watched Data 1
+WatchedExpression="wheel_msgs", Window=Watched Data 1
+WatchedExpression="matched_wheel_idx", Window=Watched Data 1
+WatchedExpression="id_debug", Window=Watched Data 1
+WatchedExpression="fb_msg", Window=Watched Data 1
+WatchedExpression="variant<short unsigned int", Window=Watched Data 1
+WatchedExpression="hiwdg", Window=Watched Data 1

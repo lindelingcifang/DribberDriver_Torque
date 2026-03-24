@@ -13,7 +13,10 @@
                 "${workspaceFolder}/Firmware/Communication",
                 "${workspaceFolder}/Firmware/Communication/can",
                 "${workspaceFolder}/Firmware/Interface",
-                "${workspaceFolder}/Firmware/Task"
+                "${workspaceFolder}/Firmware/Task",
+                "/usr/lib/arm-none-eabi/include",
+                "/usr/lib/arm-none-eabi/include/c++/13.2.1",
+                "/usr/lib/gcc/arm-none-eabi/13.2.1/include"
             ],
             "defines": [
                 "USE_HAL_DRIVER",

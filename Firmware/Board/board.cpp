@@ -78,7 +78,7 @@ bool board_init() {
     MX_TIM1_Init();
     MX_TIM13_Init();
 
-    imu.lsm6ds3_init();
+    HAL_IWDG_Refresh(&hiwdg);
 
     // Initialize ZCAN for CAN1 and CAN2
     if (!can1_bus.start(&hcan1)) {
@@ -95,14 +95,12 @@ bool board_init() {
     optflow_filter.fifo = CAN_RX_FIFO0;
     can1_bus.subscribe(optflow_filter, on_optflow_rx, nullptr, nullptr);
     
-    // Subscribe to motor feedback (CAN2, IDs 0x201-0x205)
+    // Subscribe to motor feedback (CAN2, IDs 0x01-0x205)
     MsgIdFilterSpecs motor_filter;
-    motor_filter.id = (uint16_t)0x201;
-    motor_filter.mask = 0x7F8;  // Match IDs 0x201 to 0x205
+    motor_filter.id = (uint16_t)0x01;
+    motor_filter.mask = 0x000;  // Match IDs 0x01-0x205
     motor_filter.fifo = CAN_RX_FIFO1;
     can2_bus.subscribe(motor_filter, on_motor_fb_rx, nullptr, nullptr);
-
-    HAL_SPI_TransmitReceive(imu.hspi_, (uint8_t*)imu.lsm6ds3_tx_data, (uint8_t*)imu.lsm6ds3_rx_data, 4, HAL_MAX_DELAY);
 
     HAL_UARTEx_ReceiveToIdle_DMA(&huart4, robot.imu_rx_data, IMU_RX_DATA_LENGTH);
 
@@ -150,6 +148,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     if (hspi == imu.hspi_) {
         // Handle IMU SPI transfer complete
         osSemaphoreRelease(sem_imu_readyHandle);
+    }
+    if (hspi->Instance == SPI1) {
+        // Trigger SPI exchange task, similar to ctrl task trigger flow
+        osSemaphoreRelease(sem_spi_triggerHandle);
     }
 }
 
@@ -200,13 +202,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    if (GPIO_Pin == imu.data_ready_pin_) {
-        // Handle IMU data ready interrupt
-        HAL_SPI_TransmitReceive_DMA(imu.hspi_, (uint8_t*)imu.lsm6ds3_tx_data, (uint8_t*)imu.lsm6ds3_rx_data, 4);
-    }
-}
+// void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+// {
+//     if (GPIO_Pin == imu.data_ready_pin_) {
+//         // Handle IMU data ready interrupt
+//         HAL_SPI_TransmitReceive_DMA(imu.hspi_, (uint8_t*)imu.lsm6ds3_tx_data, (uint8_t*)imu.lsm6ds3_rx_data, 4);
+//     }
+// }
 
 } // extern "C"
 

@@ -4,38 +4,55 @@
 #include "z_main.h"
 #include <cstring>
 
+// Debug variables
+volatile uint8_t id_debug = 0;
+
 extern "C" {
 
 // MotorRxTask - Process motor feedback messages
 void StartMotorRxTask(void *argument) {
     osDelay(100);  // Wait for initialization
     
-    Motor::Feedback_t fb;
+    can_Message_t fb_msg;
     
     for(;;) {
         // Block waiting for motor feedback from queue
-        if (osMessageQueueGet(q_motor_fbHandle, &fb, NULL, osWaitForever) == osOK) {
-            
-            // Acquire robot state mutex
-            if (osMutexAcquire(mtx_robot_stateHandle, 10) == osOK) {
-                
-                // Decode motor feedback based on ID
-                // IDs 0x201-0x204 are wheel motors (IDs 1-4)
-                // ID 0x205 is dribbler (ID 5)
-                
-                if (fb.motor_id >= 0x201 && fb.motor_id <= 0x204) {
-                    uint8_t motor_idx = fb.motor_id - 0x201;
-                    if (motor_idx < 4 && robot.wheel_motor[motor_idx] != nullptr) {
-                        robot.wheel_motor[motor_idx]->decode(fb.data);
-                    }
-                } else if (fb.motor_id == 0x205) {
-                    if (robot.dribbler != nullptr) {
-                        robot.dribbler->decode(fb.data);
+        if (osMessageQueueGet(q_motor_fbHandle, &fb_msg, NULL, osWaitForever) == osOK) {
+
+            id_debug = fb_msg.id;  // Debug: store received CAN ID
+            if (id_debug == 14) {
+                volatile uint8_t a = 0;
+            }
+                            
+            // Match wheel motor feedback by configured feedback CAN ID instead of hardcoded IDs.
+            int matched_wheel_idx = -1;
+            for (int i = 0; i < 4; ++i) {
+                if (robot.wheel_motors[i] != nullptr &&
+                    fb_msg.id == robot.wheel_motors[i]->feedback_can_id()) {
+                    matched_wheel_idx = i;
+                    break;
+                }
+            }
+
+            if (matched_wheel_idx >= 0) {
+                if (!robot.wheel_motors[matched_wheel_idx]->is_writing_register()) {
+                    robot.wheel_motors[matched_wheel_idx]->parse_feedback_data(fb_msg.buf);
+                    if (!robot.wheel_motors[matched_wheel_idx]->is_enabled()) {
+                        can_Message_t msg;
+                        robot.wheel_motors[matched_wheel_idx]->build_clear_error_msg(msg);
+                        osSemaphoreAcquire(sem_can_txHandle, osWaitForever);
+                        can2_bus.send_message(msg);
+                        osSemaphoreRelease(sem_can_txHandle);
+                        robot.wheel_motors[matched_wheel_idx]->build_enable_msg(msg);
+                        osSemaphoreAcquire(sem_can_txHandle, osWaitForever);
+                        can2_bus.send_message(msg);
+                        osSemaphoreRelease(sem_can_txHandle);
                     }
                 }
-                
-                osMutexRelease(mtx_robot_stateHandle);
+            } else if (robot.dribbler != nullptr && fb_msg.id == robot.dribbler->feedback_can_id()) {
+                robot.dribbler->parse_feedback_data(fb_msg.buf);
             }
+
         }
     }
 }
