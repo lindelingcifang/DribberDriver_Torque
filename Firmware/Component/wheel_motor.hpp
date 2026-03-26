@@ -3,6 +3,7 @@
 
 #include "Task/utils.hpp"
 #include "Communication/can/can_helpers.hpp"
+#include "component.hpp"
 #include <cstdint>
 
 class WheelMotorBase {
@@ -64,8 +65,19 @@ public:
     Type get_type() const { return type_; }
     bool is_enabled() const { return enabled_; }
 
+    OutputPort<float>* angle_output_port() { return &angle_output_port_; }
+    OutputPort<float>* velocity_output_port() { return &velocity_output_port_; }
+    OutputPort<float>* torque_output_port() { return &torque_output_port_; }
+    OutputPort<float>* current_output_port() { return &current_output_port_; }
+
+    InputPort<float>* velocity_cmd_input_port() { return &velocity_cmd_input_port_; }
+    InputPort<float>* torque_ff_cmd_input_port() { return &torque_ff_cmd_input_port_; }
+
+    void reset_ports();
+
 protected:
     WheelMotorBase(Type type, const Config_t& config, const Info_t& info);
+    void publish_feedback_ports();
 
     float angle_ = 0.0f;
     float vel_ = 0.0f;
@@ -77,6 +89,14 @@ protected:
     Config_t config_;
     Mode mode_ = kModeVelocityControl;
     bool enabled_ = false;
+
+    OutputPort<float> angle_output_port_{0.0f};
+    OutputPort<float> velocity_output_port_{0.0f};
+    OutputPort<float> torque_output_port_{0.0f};
+    OutputPort<float> current_output_port_{0.0f};
+
+    InputPort<float> velocity_cmd_input_port_;
+    InputPort<float> torque_ff_cmd_input_port_;
 };
 
 class MotorDMH3510 : public WheelMotorBase {

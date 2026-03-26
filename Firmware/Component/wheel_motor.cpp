@@ -27,6 +27,20 @@ const WheelMotorBase::Info_t motor_info_DMH3510{
 WheelMotorBase::WheelMotorBase(Type type, const Config_t& config, const Info_t& info)
     : type_(type), info_(info), config_(config) {}
 
+void WheelMotorBase::publish_feedback_ports() {
+    angle_output_port_ = angle_;
+    velocity_output_port_ = vel_;
+    torque_output_port_ = torque_;
+    current_output_port_ = current_;
+}
+
+void WheelMotorBase::reset_ports() {
+    angle_output_port_.reset();
+    velocity_output_port_.reset();
+    torque_output_port_.reset();
+    current_output_port_.reset();
+}
+
 MotorDMH3510::MotorDMH3510(const Config_t& config)
     : WheelMotorBase(kTypeDMH3510, config, motor_info_DMH3510) {}
 
@@ -84,6 +98,7 @@ void MotorDMH3510::parse_feedback_data(const uint8_t rx_data[8]) {
     vel_ = config_.direction * vel * 30.0f / 3.1415926535f;
 
     enabled_ = (state_ == kStateMotorEnable);
+    publish_feedback_ports();
 }
 
 void MotorDMH3510::build_set_mode_msg(Mode mode, can_Message_t& msg) {

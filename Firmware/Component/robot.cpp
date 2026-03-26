@@ -1,6 +1,8 @@
 #include "robot.hpp"
+#include "control_params.hpp"
 #include <cstring>
 #include <cmath>
+#include <algorithm>
 
 // Debug
 volatile float target_vx_debug = 0;
@@ -9,12 +11,9 @@ volatile float target_vw_debug = 0;
 volatile float wheel_vel_debug = 0;
 volatile float robot_real_vx_debug = 0;
 
-// Constants
-static constexpr float DT = 1.0f / 1000.0f;
-
 // Wheel geometry
-static constexpr float WHEEL_ANGLE_FORWARD = 60.0f / 180.0f * PI;
-static constexpr float WHEEL_ANGLE_BACKWARD = 45.0f / 180.0f * PI;
+static constexpr float WHEEL_ANGLE_FORWARD = control_config::kWheelAlphaRad;
+static constexpr float WHEEL_ANGLE_BACKWARD = control_config::kWheelBetaRad;
 
 // Pre-computed trigonometric values
 static const float SIN_WHEEL_ANGLE_FWD = sinf(WHEEL_ANGLE_FORWARD);
@@ -23,24 +22,35 @@ static const float SIN_WHEEL_ANGLE_BWD = sinf(WHEEL_ANGLE_BACKWARD);
 static const float COS_WHEEL_ANGLE_BWD = cosf(WHEEL_ANGLE_BACKWARD);
 
 // Robot dynamics parameters
-static constexpr float ROBOT_MASS = 2.19692f;           // kg
-static constexpr float ROBOT_INERTIA = 2.29587357e-6f; // kg*m^2
-static constexpr float ROBOT_RADIUS = 0.073f;           // m (avg of 85mm and 61mm)
-static constexpr float WHEEL_INERTIA = 8.38e-5f;        // kg*m^2
-static constexpr float WHEEL_RADIUS = 0.0285f;          // m
-static constexpr float WHEEL_PARALLEL_RESISTANCE = 0.016f;
-static constexpr float VERTICAL_RESISTANCE = 0.0f;
-static constexpr float ACC_THRESHOLD[3] = {8.0f, 8.0f, 40.0f};
+static constexpr float ROBOT_RADIUS = control_config::kWheelCenterDistanceM;
+static constexpr float WHEEL_RADIUS = control_config::kWheelRadiusM;
+static constexpr float ACC_THRESHOLD[3] = {
+    control_config::kAccThresholdX,
+    control_config::kAccThresholdY,
+    control_config::kAccThresholdYaw,
+};
+
+static constexpr float VEL_ERR_GAIN[3] = {
+    control_config::kVelErrGainX,
+    control_config::kVelErrGainY,
+    control_config::kVelErrGainYaw,
+};
+
+static constexpr float JERK_LIMIT[3] = {
+    control_config::kJerkLimitX,
+    control_config::kJerkLimitY,
+    control_config::kJerkLimitYaw,
+};
 
 // Wheel velocity angle matrices
 static const float WHEEL_VX_ANGLE[4] = {
-    SIN_WHEEL_ANGLE_FWD, -SIN_WHEEL_ANGLE_FWD, 
-    -SIN_WHEEL_ANGLE_BWD, SIN_WHEEL_ANGLE_BWD
+    COS_WHEEL_ANGLE_FWD, -COS_WHEEL_ANGLE_FWD, 
+    -COS_WHEEL_ANGLE_BWD, COS_WHEEL_ANGLE_BWD
 };
 
 static const float WHEEL_VY_ANGLE[4] = {
-    -COS_WHEEL_ANGLE_FWD, -COS_WHEEL_ANGLE_FWD, 
-    COS_WHEEL_ANGLE_BWD, COS_WHEEL_ANGLE_BWD
+    -SIN_WHEEL_ANGLE_FWD, -SIN_WHEEL_ANGLE_FWD, 
+    SIN_WHEEL_ANGLE_BWD, SIN_WHEEL_ANGLE_BWD
 };
 
 // Motor parameters for wheel motors
@@ -62,34 +72,34 @@ static const DibbleMotorBase::Config_t DRIBBLER_MOTOR_PARAMS = {
 
 // PID parameters for wheel velocity control
 static const PID::Parameter_t WHEEL_VEL_PID_PARAMS[4] = {
-    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = DT},
-    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = DT},
-    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = DT},
-    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = DT}
+    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = control_config::kControlDtSec},
+    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = control_config::kControlDtSec},
+    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = control_config::kControlDtSec},
+    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = control_config::kControlDtSec}
 };
 
 // PID parameters for dribbler
 static const PID::Parameter_t DRIBBLER_PID_PARAMS = {
     .kp = 0.001f, .ki = 0.005f, .kd = 0,
     .output_limit = motor_info_M2006.broad_current_limit,
-    .integ_limit = motor_info_M2006.broad_current_limit, .dt = DT
+    .integ_limit = motor_info_M2006.broad_current_limit, .dt = control_config::kControlDtSec
 };
 
 // TD (tracking differentiator) parameters for dribbler
 static const TD::Parameter_t DRIBBLER_TD_PARAMS = {
-    .r = 2000, .h = 0.01f, .dt = DT,
+    .r = 2000, .h = 0.01f, .dt = control_config::kControlDtSec,
     .is_cycle = false, .cycle_low = -180.0f, .cycle_high = 180.0f
 };
 
 // TD parameters for wheel motors
 static const TD::Parameter_t WHEEL_TD_PARAMS[4] = {
-    {.r = 200000, .h = 0.01f, .dt = DT, .is_cycle = false, 
+    {.r = 200000, .h = 0.01f, .dt = control_config::kControlDtSec, .is_cycle = false,
      .cycle_low = -180.0f, .cycle_high = 180.0f},
-    {.r = 200000, .h = 0.01f, .dt = DT, .is_cycle = false, 
+    {.r = 200000, .h = 0.01f, .dt = control_config::kControlDtSec, .is_cycle = false,
      .cycle_low = -180.0f, .cycle_high = 180.0f},
-    {.r = 200000, .h = 0.01f, .dt = DT, .is_cycle = false, 
+    {.r = 200000, .h = 0.01f, .dt = control_config::kControlDtSec, .is_cycle = false,
      .cycle_low = -180.0f, .cycle_high = 180.0f},
-    {.r = 200000, .h = 0.01f, .dt = DT, .is_cycle = false, 
+    {.r = 200000, .h = 0.01f, .dt = control_config::kControlDtSec, .is_cycle = false,
      .cycle_low = -180.0f, .cycle_high = 180.0f}
 };
 
@@ -102,6 +112,10 @@ Robot::Robot() {
         wheel_motors[i] = new MotorDMH3510(WHEEL_MOTOR_PARAMS[i]);
         wheel_vel_PID_controllers[i] = new PID(WHEEL_VEL_PID_PARAMS[i]);
         wheel_filter[i] = new TD(WHEEL_TD_PARAMS[i], 0);
+
+        wheel_motors[i]->velocity_cmd_input_port()->connect_to(&motor_vel[i]);
+        chassis_controller.wheel_velocity_input_port(i)->connect_to(wheel_motors[i]->velocity_output_port());
+        wheel_motors[i]->torque_ff_cmd_input_port()->connect_to(chassis_controller.wheel_torque_ff_output_port(i));
     }
 
     // Initialize dribbler
@@ -162,9 +176,9 @@ void Robot::ik_solve() {
     // Calculate motor velocities
     for (uint8_t i = 0; i < 4; i++) {
         motor_vel[i] = ((robot_real_vel[0] * WHEEL_VX_ANGLE[i] + 
-                        robot_real_vel[1] * WHEEL_VY_ANGLE[i] + 
+                        robot_real_vel[1] * WHEEL_VY_ANGLE[i] - 
                         robot_real_vel[2] * ROBOT_RADIUS) / WHEEL_RADIUS) 
-                       * 30.0f / PI;
+                       * 30.0f / control_config::kPi;
         // Limit wheel velocity
         motor_vel[i] = std::clamp(motor_vel[i], -wheel_vel_limit, wheel_vel_limit);
     }
@@ -173,23 +187,60 @@ void Robot::ik_solve() {
 
 void Robot::motion_planner(const double _dt) {
     double dt_s = _dt / 1000000.0;  // Convert microseconds to seconds
+    if (dt_s <= 1e-9) {
+        return;
+    }
 
     for (uint8_t i = 0; i < 3; i++) {
-        // Calculate acceleration
-        robot_acc[i] = (robot_vel[i] - last_robot_real_vel[i]) / dt_s;
+        const float vel_err = robot_vel[i] - last_robot_real_vel[i];
+        const float desired_acc = std::clamp(
+            VEL_ERR_GAIN[i] * vel_err,
+            -ACC_THRESHOLD[i],
+            ACC_THRESHOLD[i]
+        );
 
-        // Limit acceleration
-        if (robot_acc[i] > ACC_THRESHOLD[i]) {
-            robot_acc[i] = ACC_THRESHOLD[i];
-        } else if (robot_acc[i] < -ACC_THRESHOLD[i]) {
-            robot_acc[i] = -ACC_THRESHOLD[i];
+        const float jerk_cmd = std::clamp(
+            static_cast<float>((desired_acc - robot_acc[i]) / dt_s),
+            -JERK_LIMIT[i],
+            JERK_LIMIT[i]
+        );
+
+        robot_acc[i] += jerk_cmd * static_cast<float>(dt_s);
+
+        robot_acc[i] = std::clamp(robot_acc[i], -ACC_THRESHOLD[i], ACC_THRESHOLD[i]);
+
+        robot_real_vel[i] = last_robot_real_vel[i] + robot_acc[i] * static_cast<float>(dt_s);
+
+        const float before = robot_vel[i] - last_robot_real_vel[i];
+        const float after = robot_vel[i] - robot_real_vel[i];
+        if (before * after < 0.0f) {
+            robot_real_vel[i] = robot_vel[i];
+            robot_acc[i] = 0.0f;
         }
 
-        // Update velocity
-        robot_real_vel[i] = last_robot_real_vel[i] + robot_acc[i] * dt_s;
         last_robot_real_vel[i] = robot_real_vel[i];
     }
     robot_real_vx_debug = robot_real_vel[0];
+}
+
+void Robot::bind_imu_ports(IMU& imu_ref) {
+    chassis_controller.imu_yaw_input_port()->connect_to(imu_ref.yaw_port());
+    chassis_controller.imu_omega_z_input_port()->connect_to(imu_ref.omega_z_port());
+}
+
+void Robot::update_torque_feedforward(const double _dt) {
+    const float dt_s = static_cast<float>(_dt / 1000000.0);
+    if (dt_s <= 1e-9f) {
+        return;
+    }
+
+    chassis_controller.set_reference(robot_real_vel, robot_acc);
+    chassis_controller.step(dt_s);
+
+    for (uint8_t i = 0; i < 4; ++i) {
+        const std::optional<float> tau_ff = chassis_controller.wheel_torque_ff_output_port(i)->any();
+        motor_Ff[i] = tau_ff.has_value() ? *tau_ff : 0.0f;
+    }
 }
 
 void Robot::watchdog_feed() {

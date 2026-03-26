@@ -18,11 +18,6 @@ void StartMotorRxTask(void *argument) {
     for(;;) {
         // Block waiting for motor feedback from queue
         if (osMessageQueueGet(q_motor_fbHandle, &fb_msg, NULL, osWaitForever) == osOK) {
-
-            id_debug = fb_msg.id;  // Debug: store received CAN ID
-            if (id_debug == 14) {
-                volatile uint8_t a = 0;
-            }
                             
             // Match wheel motor feedback by configured feedback CAN ID instead of hardcoded IDs.
             int matched_wheel_idx = -1;

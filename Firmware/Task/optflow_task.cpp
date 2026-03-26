@@ -19,6 +19,14 @@ float all;
 float imu_omega_z;
 float imu_angle_z;
 
+volatile bool g_optflow_available = false;
+volatile uint32_t g_optflow_last_update_ms = 0;
+
+namespace {
+static constexpr uint32_t kOptFlowQueueWaitMs = 20;
+static constexpr uint32_t kOptFlowOfflineTimeoutMs = 200;
+}
+
 
 extern "C" {
 
@@ -29,8 +37,8 @@ void StartOptFlowRxTask(void *argument) {
     OptFlow::Data_t data;
     
     for(;;) {
-        // Block waiting for optical flow data from queue
-        if (osMessageQueueGet(q_optflow_dataHandle, &data, NULL, osWaitForever) == osOK) {
+        // Poll queue with timeout so that we can maintain an explicit offline state.
+        if (osMessageQueueGet(q_optflow_dataHandle, &data, NULL, kOptFlowQueueWaitMs) == osOK) {
             
             // // Acquire robot state mutex
             // if (osMutexAcquire(mtx_robot_stateHandle, 10) == osOK) {
@@ -63,9 +71,17 @@ void StartOptFlowRxTask(void *argument) {
             e = state.e;
             f = state.f;
             all = state.all_distance;
+
+            g_optflow_last_update_ms = HAL_GetTick();
+            g_optflow_available = true;
                 
             //     osMutexRelease(mtx_robot_stateHandle);
             // }
+        } else {
+            const uint32_t now_ms = HAL_GetTick();
+            if ((now_ms - g_optflow_last_update_ms) > kOptFlowOfflineTimeoutMs) {
+                g_optflow_available = false;
+            }
         }
     }
 }

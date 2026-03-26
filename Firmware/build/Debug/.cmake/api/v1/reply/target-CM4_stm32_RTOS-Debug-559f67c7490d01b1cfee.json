@@ -382,9 +382,10 @@
 				32,
 				33,
 				34,
-				40,
-				41,
-				42
+				35,
+				44,
+				45,
+				46
 			]
 		}
 	],
@@ -464,9 +465,10 @@
 				32,
 				33,
 				34,
-				40,
-				41,
-				42
+				35,
+				44,
+				45,
+				46
 			]
 		},
 		{
@@ -483,28 +485,27 @@
 				27,
 				28,
 				29,
-				35,
 				36,
 				37,
 				38,
 				39,
+				40,
+				41,
+				42,
 				43,
-				44,
-				45,
-				46,
 				47,
 				48,
-				49
+				49,
+				50,
+				51,
+				52,
+				53
 			]
 		},
 		{
 			"name" : "Object Libraries",
 			"sourceIndexes" : 
 			[
-				50,
-				51,
-				52,
-				53,
 				54,
 				55,
 				56,
@@ -534,7 +535,11 @@
 				80,
 				81,
 				82,
-				83
+				83,
+				84,
+				85,
+				86,
+				87
 			]
 		}
 	],
@@ -720,6 +725,12 @@
 		{
 			"backtrace" : 9,
 			"compileGroupIndex" : 2,
+			"path" : "Component/chassis_controller.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 9,
+			"compileGroupIndex" : 2,
 			"path" : "Component/dribble_motor.cpp",
 			"sourceGroupIndex" : 0
 		},
@@ -746,6 +757,21 @@
 			"compileGroupIndex" : 2,
 			"path" : "Component/wheel_motor.cpp",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 9,
+			"path" : "Component/chassis_controller.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 9,
+			"path" : "Component/component.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 9,
+			"path" : "Component/control_params.hpp",
+			"sourceGroupIndex" : 2
 		},
 		{
 			"backtrace" : 9,

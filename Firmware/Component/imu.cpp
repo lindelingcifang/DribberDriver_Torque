@@ -1,7 +1,6 @@
 #include "imu.hpp"
 
 const float imu_k[3] = {16.0f * 9.8f / 32768.0f, 2000.0f / 32768.0f, 180.0f / 32768.0f};
-const float lsm56ds3_gyro_k = 245.0f / 32768.0f;
 
 void IMU::decode(uint8_t raw_data[IMU_RX_DATA_LENGTH])
 {
@@ -25,6 +24,8 @@ void IMU::decode(uint8_t raw_data[IMU_RX_DATA_LENGTH])
             }
         }
     }
+
+    publish_ports_from_cache();
 }
 
 bool IMU::sumcrc(const uint8_t raw_data[11])
@@ -53,21 +54,16 @@ void IMU::get_data(float out_data[9]) const
     out_data[8] = data_[kAngleZ];
 }
 
-void IMU::lsm6ds3_init() {
-    HAL_Delay(20);
-    auto write_reg = [this](uint8_t addr, uint8_t val) {
-        uint16_t tx = (static_cast<uint16_t>(addr & 0x7F) << 8) | val; // write: bit7=0
-        (void)HAL_SPI_Transmit(hspi_, (uint8_t*)&tx, 1, HAL_MAX_DELAY);
-    };
-
-    write_reg(0x19, 0x38); // CTRL10_C: Gyro X/Y/Z enable
-    write_reg(0x11, 0x60); // CTRL2_G: 416Hz, high-performance, 245 dps
-    write_reg(0x0D, 0x02); // INT1_CTRL: Gyro data-ready on INT1
-    write_reg(0x12, 0x04); // CTRL3_C: IF_INC=1 (auto address increment)
+void IMU::publish_ports_from_cache() {
+    omega_x_port_ = data_[kOmegaX];
+    omega_y_port_ = data_[kOmegaY];
+    omega_z_port_ = data_[kOmegaZ];
+    yaw_port_ = data_[kAngleZ];
 }
 
-void IMU::process_spi_data() {
-    data_[kOmegaX] = (short)(((short)(lsm6ds3_rx_data[1] >> 8) << 8) | (lsm6ds3_rx_data[0] & 0xFF)) * lsm56ds3_gyro_k;
-    data_[kOmegaY] = (short)(((short)(lsm6ds3_rx_data[2] >> 8) << 8) | (lsm6ds3_rx_data[1] & 0xFF)) * lsm56ds3_gyro_k;
-    data_[kOmegaZ] = (short)(((short)(lsm6ds3_rx_data[3] >> 8) << 8) | (lsm6ds3_rx_data[2] & 0xFF)) * lsm56ds3_gyro_k;
+void IMU::reset_ports() {
+    omega_x_port_.reset();
+    omega_y_port_.reset();
+    omega_z_port_.reset();
+    yaw_port_.reset();
 }

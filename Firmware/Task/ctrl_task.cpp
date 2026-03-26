@@ -2,6 +2,8 @@
 #include "freertos_vars.h"
 #include "can_callbacks.h"
 #include "z_main.h"
+#include "Component/control_params.hpp"
+#include <optional>
 
 namespace {
 
@@ -18,8 +20,16 @@ struct MITCommandConfig {
     float torque_ff;
 };
 
-static constexpr MITCommandConfig kMITRunConfig{0.0f, 0.5f, 0.0f};
-static constexpr MITCommandConfig kMITSafeConfig{2.0f, 0.1f, 0.0f};
+static constexpr MITCommandConfig kMITRunConfig{
+    control_config::kMITRunKp,
+    control_config::kMITRunKd,
+    control_config::kMITRunTorqueFf,
+};
+static constexpr MITCommandConfig kMITSafeConfig{
+    control_config::kMITSafeKp,
+    control_config::kMITSafeKd,
+    control_config::kMITSafeTorqueFf,
+};
 static constexpr float kRadPerRpm = 3.1415926535f / 30.0f;
 static constexpr float kDegToRad = 3.1415926535f / 180.0f;
 
@@ -45,19 +55,24 @@ bool build_wheel_command(Robot& robot, uint8_t index, bool safe_output, can_Mess
     out_msg.isExt = false;
     out_msg.rtr = false;
 
+    const std::optional<float> vel_cmd_rpm_opt = motor->velocity_cmd_input_port()->any();
+    const float vel_cmd_rpm = vel_cmd_rpm_opt.has_value() ? *vel_cmd_rpm_opt : robot.motor_vel[index];
+
     if (kWheelCommandMode == kWheelCommandMIT) {
         uint8_t tx_data[8] = {0};
-        const float velocity_ref = safe_output ? 0.0f : (robot.motor_vel[index] * kRadPerRpm);
+        const std::optional<float> torque_ff_opt = motor->torque_ff_cmd_input_port()->any();
+        const float torque_ff = torque_ff_opt.has_value() ? *torque_ff_opt : 0.0f;
+        const float velocity_ref = safe_output ? 0.0f : (vel_cmd_rpm * kRadPerRpm);
         const float position_ref = motor->get_angle() * kDegToRad;
         const MITCommandConfig cfg = safe_output ? kMITSafeConfig : kMITRunConfig;
-        motor->pack_mit_data(position_ref, velocity_ref, cfg.kp, cfg.kd, cfg.torque_ff, tx_data);
+        motor->pack_mit_data(position_ref, velocity_ref, cfg.kp, cfg.kd, (safe_output ? cfg.torque_ff : torque_ff), tx_data);
         out_msg.len = 8;
         memcpy(out_msg.buf, tx_data, out_msg.len);
         return true;
     }
 
     uint8_t tx_data[4] = {0};
-    const float velocity_ref = safe_output ? 0.0f : (robot.motor_vel[index] * kRadPerRpm);
+    const float velocity_ref = safe_output ? 0.0f : (vel_cmd_rpm * kRadPerRpm);
     motor->pack_velocity_data(velocity_ref, tx_data);
     out_msg.len = 4;
     memcpy(out_msg.buf, tx_data, out_msg.len);
@@ -118,6 +133,8 @@ void StartCrtlTask(void *argument) {
     // Wait for system initialization
     osDelay(100);
 
+    robot.bind_imu_ports(imu);
+
     // Initialize motors (set control mode, PID gains, enable)
     motor_init();
     
@@ -131,18 +148,29 @@ void StartCrtlTask(void *argument) {
             
             // Acquire robot state mutex
             if (osMutexAcquire(mtx_robot_stateHandle, 10) == osOK) {
+                imu.reset_ports();
+                for (uint8_t i = 0; i < 4; i++) {
+                    robot.wheel_motors[i]->reset_ports();
+                }
                 
                 // Motion planning: compute acceleration from velocity setpoints
                 robot.motion_planner(TIM2_PERIOD_CLOCKS);  // microseconds
 
-                // Inverse kinematics: compute wheel torques
+                // Inverse kinematics: compute wheel velocities
                 robot.ik_solve();
+
+                // Observer-based control law: compute wheel torque feedforward
+                robot.update_torque_feedforward(TIM2_PERIOD_CLOCKS);
                 
                 can_Message_t wheel_msgs[4];
 
-
                 for (uint8_t i = 0; i < 4; i++) {
-                    robot.wheel_filter[i]->calc(robot.wheel_motors[i]->get_velocity());
+                    const std::optional<float> wheel_vel_fb =
+                        robot.wheel_motors[i]->velocity_output_port()->any();
+                    const float wheel_vel_rpm =
+                        wheel_vel_fb.has_value() ? *wheel_vel_fb : robot.wheel_motors[i]->get_velocity();
+
+                    robot.wheel_filter[i]->calc(wheel_vel_rpm);
                     debug_motor_vel[i] = robot.wheel_filter[i]->get_data();
                     debug_motor_acc[i] = robot.wheel_filter[i]->get_diff() * 3.1415926f / 30.0f;
                     

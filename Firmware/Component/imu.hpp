@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 #include "spi.h"
+#include "component.hpp"
 
 #define IMU_RX_DATA_LENGTH (11*3*2)
 #define IMU_TX_DATA_LENGTH (5)
@@ -84,6 +85,13 @@ public:
     void get_data(float out_data[9]) const;
     void lsm6ds3_init();
     void process_spi_data();
+    void publish_ports_from_cache();
+    void reset_ports();
+
+    OutputPort<float>* omega_x_port() { return &omega_x_port_; }
+    OutputPort<float>* omega_y_port() { return &omega_y_port_; }
+    OutputPort<float>* omega_z_port() { return &omega_z_port_; }
+    OutputPort<float>* yaw_port() { return &yaw_port_; }
     // void update(uint8_t imu_tx_date[5]);
     // void set_update_mode(const Mode mode) { mode_ = mode; }
 
@@ -94,6 +102,10 @@ public:
 
 private:
     float data_[12] = {0};
+    OutputPort<float> omega_x_port_{0.0f};
+    OutputPort<float> omega_y_port_{0.0f};
+    OutputPort<float> omega_z_port_{0.0f};
+    OutputPort<float> yaw_port_{0.0f};
     bool sumcrc(const uint8_t raw_data[11]);
     // Mode mode_ = kAuto;
     

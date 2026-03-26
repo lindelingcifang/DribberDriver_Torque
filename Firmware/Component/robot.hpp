@@ -2,6 +2,7 @@
 #define __ROBOT_HPP
 
 #include "Task/z_main.h"
+#include "chassis_controller.hpp"
 
 struct __attribute__((packed)) CM4_to_stm32_spi
 {
@@ -34,6 +35,8 @@ public:
 
     void ik_solve();
     void motion_planner(const double _dt);
+    void bind_imu_ports(IMU& imu_ref);
+    void update_torque_feedforward(const double _dt);
 
     void watchdog_feed();
     bool watchdog_check();
@@ -80,6 +83,8 @@ public:
     float robot_acc[3] = {0};
     float ik_solve_basis[3] = {0, 1, 2};
     float ik_solve_inv_b[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+
+    MixedLesoChassisController chassis_controller;
 
     uint32_t spi_error_count = 0;
 
