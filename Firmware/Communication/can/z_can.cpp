@@ -110,6 +110,46 @@ bool ZCAN::send_message(const can_Message_t &txmsg) {
     return HAL_CAN_AddTxMessage(handle_, &header, (uint8_t*)txmsg.buf, &retTxMailbox) == HAL_OK;
 }
 
+bool ZCAN::send_message_now(const can_Message_t& txmsg, uint32_t timeout_ms) {
+    if (HAL_CAN_GetError(handle_) != HAL_CAN_ERROR_NONE) {
+        return false;
+    }
+
+    const uint32_t start_tick = HAL_GetTick();
+    auto is_timeout = [&](void) {
+        return timeout_ms > 0 && (HAL_GetTick() - start_tick) >= timeout_ms;
+    };
+
+    // Wait until at least one TX mailbox is free before queuing the frame.
+    while (!HAL_CAN_GetTxMailboxesFreeLevel(handle_)) {
+        if (HAL_CAN_GetError(handle_) != HAL_CAN_ERROR_NONE || is_timeout()) {
+            return false;
+        }
+    }
+
+    CAN_TxHeaderTypeDef header;
+    header.StdId = txmsg.id;
+    header.ExtId = txmsg.id;
+    header.IDE = txmsg.isExt ? CAN_ID_EXT : CAN_ID_STD;
+    header.RTR = CAN_RTR_DATA;
+    header.DLC = txmsg.len;
+    header.TransmitGlobalTime = FunctionalState::DISABLE;
+
+    uint32_t tx_mailbox = 0;
+    if (HAL_CAN_AddTxMessage(handle_, &header, (uint8_t*)txmsg.buf, &tx_mailbox) != HAL_OK) {
+        return false;
+    }
+
+    // Block until the queued frame is no longer pending in its TX mailbox.
+    while (HAL_CAN_IsTxMessagePending(handle_, tx_mailbox)) {
+        if (HAL_CAN_GetError(handle_) != HAL_CAN_ERROR_NONE || is_timeout()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 //void ZCAN::set_error(Error error) {
 //    error_ |= error;
 //}

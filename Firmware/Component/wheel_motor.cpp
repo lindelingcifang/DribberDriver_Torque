@@ -237,6 +237,18 @@ void MotorDMH3510::build_write_register_msg(uint8_t rid, uint32_t data, can_Mess
 }
 
 uint32_t MotorDMH3510::command_can_id() const {
+    switch (mode_) {
+        case kModeMITControl:
+            return static_cast<uint32_t>(config_.control_id);
+        case kModePositionVelocityControl:
+            return static_cast<uint32_t>(config_.control_id) + 0x100;
+        case kModeVelocityControl:
+            return static_cast<uint32_t>(config_.control_id) + 0x200;
+        case kModeMixedControl:
+            return static_cast<uint32_t>(config_.control_id) + 0x300;
+        default:
+            break;
+    }
     return static_cast<uint32_t>(config_.control_id);
 }
 

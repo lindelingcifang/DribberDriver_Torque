@@ -51,7 +51,7 @@ bool build_wheel_command(Robot& robot, uint8_t index, bool safe_output, can_Mess
         return true;
     }
 
-    out_msg.id = motor->command_can_id() + 0x200;
+    out_msg.id = motor->command_can_id();
     out_msg.isExt = false;
     out_msg.rtr = false;
 
@@ -89,6 +89,8 @@ float debug_K, debug_D, debug_M, debug_angle_ref;
 bool debug_enable;
 volatile uint32_t wait_us_debug = 0;
 volatile uint32_t exec_time_us = 0;
+volatile uint32_t ctrl_loop_count = 0;
+volatile uint32_t wheel_msgs_sent_count[4] = {0};
 
 float wheelInput[4];
 float debug_motor_vel[4];
@@ -142,12 +144,13 @@ void StartCrtlTask(void *argument) {
     uint32_t ctrl_end_tick = 0;
     
     for(;;) {
-        // Wait for TIM2 interrupt to trigger (1kHz)
+        // Wait for TIM2 interrupt to trigger
         if (osSemaphoreAcquire(sem_ctrl_triggerHandle, osWaitForever) == osOK) {
             ctrl_start_tick = TIM2->CNT;
             
             // Acquire robot state mutex
             if (osMutexAcquire(mtx_robot_stateHandle, 10) == osOK) {
+
                 imu.reset_ports();
                 for (uint8_t i = 0; i < 4; i++) {
                     robot.wheel_motors[i]->reset_ports();
@@ -184,16 +187,15 @@ void StartCrtlTask(void *argument) {
                 }
             
                 if (osSemaphoreAcquire(sem_can_txHandle, 10) == osOK) {
-                    for (int i = 0; i < 4; i++) {
-                        wait_us_debug = 0;
-                        while (!can2_bus.send_message(wheel_msgs[i])) {
-                            // Microsecond-level busy wait using TIM2 (1 tick = 1 us)
-                            // uint32_t wait_start = TIM2->CNT;
-                            // while ((TIM2->CNT - wait_start) < 10) {
-                            //     // Busy wait before retrying to prevent task starvation
-                            // }
-                            // wait_us_debug += 10;
+                    for (int i = 3; i >= 0; i--) {
+                        // wait_us_debug = 0;
+                        if (can2_bus.send_message_now(wheel_msgs[i], 0)) {
+                            wheel_msgs_sent_count[i]++;
                         }
+                        // while (!can2_bus.send_message(wheel_msgs[i]))
+                        // {
+                        // }
+                        
                     }
                     osSemaphoreRelease(sem_can_txHandle);
                 }
@@ -216,6 +218,7 @@ void StartCrtlTask(void *argument) {
                 osMutexRelease(mtx_robot_stateHandle);
             }
             
+            ctrl_loop_count++;
             ctrl_end_tick = TIM2->CNT;
             // Control loop execution time can be monitored here
             exec_time_us = (ctrl_end_tick >= ctrl_start_tick) ? (ctrl_end_tick - ctrl_start_tick) : (0xFFFFFFFF - ctrl_start_tick + ctrl_end_tick);

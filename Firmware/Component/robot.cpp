@@ -114,9 +114,17 @@ Robot::Robot() {
         wheel_filter[i] = new TD(WHEEL_TD_PARAMS[i], 0);
 
         wheel_motors[i]->velocity_cmd_input_port()->connect_to(&motor_vel[i]);
-        chassis_controller.wheel_velocity_input_port(i)->connect_to(wheel_motors[i]->velocity_output_port());
+        chassis_estimator.wheel_velocity_input_port(i)->connect_to(wheel_motors[i]->velocity_output_port());
         wheel_motors[i]->torque_ff_cmd_input_port()->connect_to(chassis_controller.wheel_torque_ff_output_port(i));
     }
+
+    chassis_controller.vel_x_feedback_input_port()->connect_to(chassis_estimator.vel_x_output_port());
+    chassis_controller.vel_y_feedback_input_port()->connect_to(chassis_estimator.vel_y_output_port());
+    chassis_controller.yaw_feedback_input_port()->connect_to(chassis_estimator.yaw_output_port());
+    chassis_controller.omega_z_feedback_input_port()->connect_to(chassis_estimator.omega_z_output_port());
+    chassis_controller.dist_x_feedback_input_port()->connect_to(chassis_estimator.dist_x_output_port());
+    chassis_controller.dist_y_feedback_input_port()->connect_to(chassis_estimator.dist_y_output_port());
+    chassis_controller.dist_yaw_feedback_input_port()->connect_to(chassis_estimator.dist_yaw_output_port());
 
     // Initialize dribbler
     dribbler = new MotorM2006(DRIBBLER_MOTOR_PARAMS);
@@ -224,8 +232,8 @@ void Robot::motion_planner(const double _dt) {
 }
 
 void Robot::bind_imu_ports(IMU& imu_ref) {
-    chassis_controller.imu_yaw_input_port()->connect_to(imu_ref.yaw_port());
-    chassis_controller.imu_omega_z_input_port()->connect_to(imu_ref.omega_z_port());
+    chassis_estimator.imu_yaw_input_port()->connect_to(imu_ref.yaw_port());
+    chassis_estimator.imu_omega_z_input_port()->connect_to(imu_ref.omega_z_port());
 }
 
 void Robot::update_torque_feedforward(const double _dt) {
@@ -233,6 +241,9 @@ void Robot::update_torque_feedforward(const double _dt) {
     if (dt_s <= 1e-9f) {
         return;
     }
+
+    chassis_estimator.set_reference_acc(robot_acc);
+    chassis_estimator.step(dt_s);
 
     chassis_controller.set_reference(robot_real_vel, robot_acc);
     chassis_controller.step(dt_s);
