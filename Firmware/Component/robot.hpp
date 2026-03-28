@@ -2,7 +2,6 @@
 #define __ROBOT_HPP
 
 #include "Task/z_main.h"
-#include "chassis_estimator.hpp"
 #include "chassis_controller.hpp"
 
 struct __attribute__((packed)) CM4_to_stm32_spi
@@ -85,7 +84,6 @@ public:
     float ik_solve_basis[3] = {0, 1, 2};
     float ik_solve_inv_b[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
-    ChassisEstimator chassis_estimator;
     MixedLesoChassisController chassis_controller;
 
     uint32_t spi_error_count = 0;

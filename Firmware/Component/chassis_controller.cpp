@@ -3,14 +3,11 @@
 #include <algorithm>
 #include <cmath>
 
-volatile float torque_ff_debug = 0;
-volatile float f_task_x_debug = 0;
-volatile float f_task_y_debug = 0;
-volatile float f_task_yaw_debug = 0;
-
 namespace {
 
 constexpr float kPi = 3.1415926535f;
+constexpr float kDegToRad = kPi / 180.0f;
+constexpr float kRpmToRadPerSec = 2.0f * kPi / 60.0f;
 
 } // namespace
 
@@ -30,38 +27,62 @@ void MixedLesoChassisController::step(float dt_s) {
         return;
     }
 
-    const std::optional<float> vel_x_feedback = vel_x_feedback_input_port_.any();
-    const std::optional<float> vel_y_feedback = vel_y_feedback_input_port_.any();
-    const std::optional<float> yaw_feedback = yaw_feedback_input_port_.any();
-    const std::optional<float> omega_z_feedback = omega_z_feedback_input_port_.any();
-    const std::optional<float> dist_x_feedback = dist_x_feedback_input_port_.any();
-    const std::optional<float> dist_y_feedback = dist_y_feedback_input_port_.any();
-    const std::optional<float> dist_yaw_feedback = dist_yaw_feedback_input_port_.any();
+    float wheel_vel_rad_s[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    for (int i = 0; i < 4; ++i) {
+        const std::optional<float> wheel_vel_rpm = wheel_velocity_input_ports_[i].any();
+        const float wheel_rpm = wheel_vel_rpm.has_value() ? *wheel_vel_rpm : last_wheel_vel_rpm_[i];
+        last_wheel_vel_rpm_[i] = wheel_rpm;
+        wheel_vel_rad_s[i] = wheel_rpm * kRpmToRadPerSec;
+    }
 
-    last_vel_x_feedback_ = vel_x_feedback.has_value() ? *vel_x_feedback : last_vel_x_feedback_;
-    last_vel_y_feedback_ = vel_y_feedback.has_value() ? *vel_y_feedback : last_vel_y_feedback_;
-    last_yaw_feedback_ = yaw_feedback.has_value() ? *yaw_feedback : last_yaw_feedback_;
-    last_omega_z_feedback_ = omega_z_feedback.has_value() ? *omega_z_feedback : last_omega_z_feedback_;
-    last_dist_x_feedback_ = dist_x_feedback.has_value() ? *dist_x_feedback : last_dist_x_feedback_;
-    last_dist_y_feedback_ = dist_y_feedback.has_value() ? *dist_y_feedback : last_dist_y_feedback_;
-    last_dist_yaw_feedback_ = dist_yaw_feedback.has_value() ? *dist_yaw_feedback : last_dist_yaw_feedback_;
+    float chassis_vel_meas[3] = {0.0f, 0.0f, 0.0f};
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 4; ++col) {
+            chassis_vel_meas[row] += j2_pinv_[row][col] * wheel_vel_rad_s[col];
+        }
+    }
 
-    (void)last_yaw_feedback_;
+    const std::optional<float> yaw_deg = imu_yaw_input_port_.any();
+    const std::optional<float> omega_z_deg_s = imu_omega_z_input_port_.any();
+    const float yaw_rad = yaw_deg.has_value() ? (*yaw_deg * kDegToRad) : last_yaw_rad_;
+    const float omega_z_rad_s = omega_z_deg_s.has_value() ? (*omega_z_deg_s * kDegToRad) : last_omega_z_rad_s_;
+    last_yaw_rad_ = yaw_rad;
+    last_omega_z_rad_s_ = omega_z_rad_s;
+    chassis_vel_meas[2] = omega_z_rad_s;
+
+    const float w_vel = control_config::kLesoVelObserverBandwidth;
+    const float l1 = 2.0f * w_vel;
+    const float l2 = w_vel * w_vel;
+
+    const float w_yaw = control_config::kLesoYawObserverBandwidth;
+    const float b1 = 3.0f * w_yaw;
+    const float b2 = 3.0f * w_yaw * w_yaw;
+    const float b3 = w_yaw * w_yaw * w_yaw;
+
+    for (int axis = 0; axis < 2; ++axis) {
+        const float e = chassis_vel_meas[axis] - vel_obs_[axis][0];
+        const float z1_dot = vel_obs_[axis][1] + l1 * e + acc_ref_[axis];
+        const float z2_dot = l2 * e;
+        vel_obs_[axis][0] += dt_s * z1_dot;
+        vel_obs_[axis][1] += dt_s * z2_dot;
+    }
+
+    const float ey = yaw_rad - yaw_obs_[0];
+    const float z1_dot = yaw_obs_[1] + b1 * ey;
+    const float z2_dot = yaw_obs_[2] + b2 * ey + acc_ref_[2];
+    const float z3_dot = b3 * ey;
+    yaw_obs_[0] += dt_s * z1_dot;
+    yaw_obs_[1] += dt_s * z2_dot;
+    yaw_obs_[2] += dt_s * z3_dot;
 
     const float f_task[3] = {
         control_config::kRobotMassKg *
-            (acc_ref_[0] + control_config::kVelFeedbackGainX * (vel_ref_[0] - last_vel_x_feedback_) - last_dist_x_feedback_),
+            (acc_ref_[0] + control_config::kVelFeedbackGainX * (vel_ref_[0] - vel_obs_[0][0]) - vel_obs_[0][1]),
         control_config::kRobotMassKg *
-            (acc_ref_[1] + control_config::kVelFeedbackGainY * (vel_ref_[1] - last_vel_y_feedback_) - last_dist_y_feedback_),
+            (acc_ref_[1] + control_config::kVelFeedbackGainY * (vel_ref_[1] - vel_obs_[1][0]) - vel_obs_[1][1]),
         control_config::kRobotInertiaKgM2 *
-            (acc_ref_[2] + control_config::kVelFeedbackGainYaw * (vel_ref_[2] - last_omega_z_feedback_) -
-             last_dist_yaw_feedback_),
+            (acc_ref_[2] + control_config::kVelFeedbackGainYaw * (vel_ref_[2] - yaw_obs_[1]) - yaw_obs_[2]),
     };
-
-    f_task_x_debug = f_task[0];
-    f_task_y_debug = f_task[1];
-    f_task_yaw_debug = f_task[2];
-
 
     for (int wheel = 0; wheel < 4; ++wheel) {
         float tau = 0.0f;
@@ -71,22 +92,23 @@ void MixedLesoChassisController::step(float dt_s) {
         tau = std::clamp(tau, -control_config::kWheelTorqueFfLimitNm, control_config::kWheelTorqueFfLimitNm);
         wheel_torque_ff_output_ports_[wheel] = tau;
     }
-
-    torque_ff_debug = wheel_torque_ff_output_ports_[0].any().value_or(0.0f);
 }
 
 void MixedLesoChassisController::reset() {
-    last_vel_x_feedback_ = 0.0f;
-    last_vel_y_feedback_ = 0.0f;
-    last_yaw_feedback_ = 0.0f;
-    last_omega_z_feedback_ = 0.0f;
-    last_dist_x_feedback_ = 0.0f;
-    last_dist_y_feedback_ = 0.0f;
-    last_dist_yaw_feedback_ = 0.0f;
+    for (int axis = 0; axis < 2; ++axis) {
+        vel_obs_[axis][0] = 0.0f;
+        vel_obs_[axis][1] = 0.0f;
+    }
+    yaw_obs_[0] = 0.0f;
+    yaw_obs_[1] = 0.0f;
+    yaw_obs_[2] = 0.0f;
 
     for (int i = 0; i < 4; ++i) {
         wheel_torque_ff_output_ports_[i] = 0.0f;
+        last_wheel_vel_rpm_[i] = 0.0f;
     }
+    last_yaw_rad_ = 0.0f;
+    last_omega_z_rad_s_ = 0.0f;
 }
 
 bool MixedLesoChassisController::inverse3x3(const float in[3][3], float out[3][3]) const {
@@ -141,6 +163,13 @@ void MixedLesoChassisController::precompute_mappings() {
         {inv_r * (-l - d * sa), inv_r * (-l - d * sa), inv_r * (-l + d * sb), inv_r * (-l + d * sb)},
     };
 
+    const float j2[4][3] = {
+        {inv_r * ca, inv_r * (-sa), inv_r * (-l)},
+        {inv_r * (-ca), inv_r * (-sa), inv_r * (-l)},
+        {inv_r * (-cb), inv_r * sb, inv_r * (-l)},
+        {inv_r * cb, inv_r * sb, inv_r * (-l)},
+    };
+
     float j1_j1t[3][3] = {{0.0f}};
     for (int row = 0; row < 3; ++row) {
         for (int col = 0; col < 3; ++col) {
@@ -163,4 +192,25 @@ void MixedLesoChassisController::precompute_mappings() {
         }
     }
 
+    float j2t_j2[3][3] = {{0.0f}};
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            for (int k = 0; k < 4; ++k) {
+                j2t_j2[row][col] += j2[k][row] * j2[k][col];
+            }
+        }
+    }
+
+    float j2t_j2_inv[3][3] = {{0.0f}};
+    if (inverse3x3(j2t_j2, j2t_j2_inv)) {
+        for (int row = 0; row < 3; ++row) {
+            for (int wheel = 0; wheel < 4; ++wheel) {
+                float acc = 0.0f;
+                for (int k = 0; k < 3; ++k) {
+                    acc += j2t_j2_inv[row][k] * j2[wheel][k];
+                }
+                j2_pinv_[row][wheel] = acc;
+            }
+        }
+    }
 }

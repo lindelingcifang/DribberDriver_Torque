@@ -105,7 +105,6 @@ endif()
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/*.cpp")
 set(OLD_GLOB
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/chassis_controller.cpp"
-  "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/chassis_estimator.cpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/dribble_motor.cpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/imu.cpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/opt_flow.cpp"
@@ -130,7 +129,6 @@ endif()
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/*.hpp")
 set(OLD_GLOB
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/chassis_controller.hpp"
-  "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/chassis_estimator.hpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/component.hpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/control_params.hpp"
   "/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/dribble_motor.hpp"

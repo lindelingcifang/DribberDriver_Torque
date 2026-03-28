@@ -5,35 +5,41 @@ Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/ctrl_task.cpp:110:9, 
 Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Communication/can/z_can.cpp:151:5, State=BP_STATE_DISABLED
 Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp:81, State=BP_STATE_DISABLED
 Breakpoint=/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp:163:5, State=BP_STATE_DISABLED
-GraphedExpression="robot_real_vx_debug", Color=#e56a6f, Show=0
-GraphedExpression="target_vx_debug", Color=#35792b, Show=0
-GraphedExpression="target_vy_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#769dda, Show=0
-GraphedExpression="target_vw_debug", Color=#b14f0d, Show=0
-GraphedExpression="torque_ff_debug", Color=#b3c38e
-GraphedExpression="f_task_x_debug", Color=#ab7b05, Show=0
-GraphedExpression="exec_time_us", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#7fd3b7, Show=0
-GraphedExpression="wait_us_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#50328f, Show=0
-GraphedExpression="idx_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#c587a5
-OpenDocument="queue.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/queue.c", Line=1560
-OpenDocument="motor_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/motor_task.cpp", Line=14
-OpenDocument="ctrl_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/ctrl_task.cpp", Line=162
-OpenDocument="chassis_controller.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/chassis_controller.cpp", Line=0
-OpenDocument="tasks.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3421
-OpenDocument="startup_stm32f405xx.s", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/startup_stm32f405xx.s", Line=50
-OpenDocument="robot.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/robot.cpp", Line=215
+GraphedExpression="target_vx_debug", Color=#e56a6f, Show=0
+GraphedExpression="target_vy_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#35792b, Show=0
+GraphedExpression="target_vw_debug", Color=#769dda, Show=0
+GraphedExpression="spi_trigger_dt_us", Color=#b14f0d, Show=0
+GraphedExpression="wheel_vel_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#b3c38e, Show=0
+GraphedExpression="robot_real_vx_debug", Color=#ab7b05, Show=0
+GraphedExpression="id_debug", Color=#7fd3b7, Show=0
+GraphedExpression="exec_time_us", Color=#50328f
+GraphedExpression="wait_us_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#c587a5, Show=0
 OpenDocument="main.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/main.cpp", Line=0
+OpenDocument="health_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/health_task.cpp", Line=0
+OpenDocument="wheel_motor.hpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/wheel_motor.hpp", Line=22
+OpenDocument="motor_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/motor_task.cpp", Line=7
+OpenDocument="ctrl_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/ctrl_task.cpp", Line=147
+OpenDocument="tasks.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3420
+OpenDocument="startup_stm32f405xx.s", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/startup_stm32f405xx.s", Line=49
+OpenDocument="stm32f4xx_hal_spi.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c", Line=1281
+OpenDocument="stm32f4xx_it.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Core/Src/stm32f4xx_it.c", Line=323
+OpenDocument="board.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/board.cpp", Line=69
+OpenDocument="spi_task.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Task/spi_task.cpp", Line=0
+OpenDocument="stm32f4xx_hal.c", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Board/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c", Line=310
+OpenDocument="robot.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/robot.cpp", Line=167
+OpenDocument="wheel_motor.cpp", FilePath="/home/lxl/zjunlict/cm4_stm32_RTOS/Firmware/Component/wheel_motor.cpp", Line=46
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=704, h=273, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Source Files", DockArea=RIGHT, x=0, y=2, w=704, h=338, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=704, h=339, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=1030, h=703, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=1030, h=598, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=BOTTOM, x=0, y=0, w=3840, h=644, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=3840, h=644, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="110;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="3526;-115", CodeGraphLegendShown=0, CodeGraphLegendPosition="3449;0"
-OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=3, w=704, h=339, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=704, h=329, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Source Files", DockArea=RIGHT, x=0, y=2, w=704, h=414, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=704, h=416, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=1030, h=859, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=1030, h=728, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=0, y=0, w=3840, h=358, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=3840, h=358, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="110;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="3526;-115", CodeGraphLegendShown=0, CodeGraphLegendPosition="3449;0"
+OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=3, w=704, h=416, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
-TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" robot_real_vx_debug";" target_vx_debug";" target_vy_debug";" target_vw_debug";" torque_ff_debug";" f_task_x_debug";" exec_time_us";" wait_us_debug";" idx_debug"], ColWidths=[100;100;100;100;100;100;100;100;100;100;100]
-TableHeader="Data Sampling Setup", SortCol="Max", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[144;322;196;210;100;210;141;224;2293]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" target_vx_debug";" target_vy_debug";" target_vw_debug";" spi_trigger_dt_us";" wheel_vel_debug";" robot_real_vx_debug";" id_debug";" exec_time_us";" wait_us_debug"], ColWidths=[100;100;100;100;100;100;100;100;100;100;100]
+TableHeader="Data Sampling Setup", SortCol="Max", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[144;322;100;210;224;114;141;161;2424]
 TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;680]
 TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;238;630]
 TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[246;196;224;140;182;135]

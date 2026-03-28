@@ -40,7 +40,6 @@ public:
     bool start(CAN_HandleTypeDef* handle);
 
     bool send_message(const can_Message_t& message) final;
-    bool send_message_now(const can_Message_t& message, uint32_t timeout_ms);
     bool subscribe(const MsgIdFilterSpecs& filter, on_can_message_cb_t callback, void* ctx, CanSubscription** handle) final;
     bool unsubscribe(CanSubscription* handle) final;
     void process_rx_fifo(uint32_t fifo);
