@@ -18,9 +18,12 @@ bool ZCAN::apply_config() {
 bool ZCAN::reinit() {
     HAL_CAN_Stop(handle_);
     HAL_CAN_ResetError(handle_);
+    const uint32_t rx_pending_it = (handle_->Instance == CAN1)
+                                 ? CAN_IT_RX_FIFO0_MSG_PENDING
+                                 : CAN_IT_RX_FIFO1_MSG_PENDING;
     return (HAL_CAN_Init(handle_) == HAL_OK)
         && (HAL_CAN_Start(handle_) == HAL_OK)
-        && (HAL_CAN_ActivateNotification(handle_, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING) == HAL_OK);
+        && (HAL_CAN_ActivateNotification(handle_, rx_pending_it) == HAL_OK);
 }
 
 bool ZCAN::start(CAN_HandleTypeDef* handle) {

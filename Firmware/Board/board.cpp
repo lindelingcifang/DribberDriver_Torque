@@ -104,7 +104,6 @@ bool board_init() {
 
     HAL_UARTEx_ReceiveToIdle_DMA(&huart4, robot.imu_rx_data, IMU_RX_DATA_LENGTH);
 
-    // Start TIM2 for 1kHz control loop
     HAL_TIM_Base_Start_IT(&htim2);
 
     // Start TIM13 for optical flow sensor timing
@@ -124,7 +123,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     }
 
     if (htim->Instance == TIM2) {
-        // Release semaphore to wake CrtlTask (1kHz)
         osSemaphoreRelease(sem_ctrl_triggerHandle);
     }
 }

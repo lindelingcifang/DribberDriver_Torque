@@ -6,6 +6,7 @@
 
 // Debug variables
 volatile uint8_t id_debug = 0;
+volatile uint32_t fb_id_counter[8] = {0};
 
 extern "C" {
 
@@ -18,6 +19,7 @@ void StartMotorRxTask(void *argument) {
     for(;;) {
         // Block waiting for motor feedback from queue
         if (osMessageQueueGet(q_motor_fbHandle, &fb_msg, NULL, osWaitForever) == osOK) {
+            fb_id_counter[fb_msg.id]++;
                             
             // Match wheel motor feedback by configured feedback CAN ID instead of hardcoded IDs.
             int matched_wheel_idx = -1;

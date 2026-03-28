@@ -32,6 +32,7 @@ static constexpr MITCommandConfig kMITSafeConfig{
 };
 static constexpr float kRadPerRpm = 3.1415926535f / 30.0f;
 static constexpr float kDegToRad = 3.1415926535f / 180.0f;
+static constexpr uint32_t kCanTxBudgetUs = 400;
 
 WheelMotorBase::Mode active_motor_mode() {
     return (kWheelCommandMode == kWheelCommandMIT)
@@ -89,6 +90,8 @@ float debug_K, debug_D, debug_M, debug_angle_ref;
 bool debug_enable;
 volatile uint32_t wait_us_debug = 0;
 volatile uint32_t exec_time_us = 0;
+volatile uint32_t tx_cmd_sent_count = 0;
+volatile uint32_t tx_cmd_drop_count = 0;
 
 float wheelInput[4];
 float debug_motor_vel[4];
@@ -128,7 +131,6 @@ void motor_init() {
 
 extern "C" {
     
-// Control task implementation - 1kHz real-time loop
 void StartCrtlTask(void *argument) {
     // Wait for system initialization
     osDelay(100);
@@ -140,9 +142,9 @@ void StartCrtlTask(void *argument) {
     
     uint32_t ctrl_start_tick = 0;
     uint32_t ctrl_end_tick = 0;
+    uint8_t tx_rr_start = 0;
     
     for(;;) {
-        // Wait for TIM2 interrupt to trigger (1kHz)
         if (osSemaphoreAcquire(sem_ctrl_triggerHandle, osWaitForever) == osOK) {
             ctrl_start_tick = TIM2->CNT;
             
@@ -184,17 +186,32 @@ void StartCrtlTask(void *argument) {
                 }
             
                 if (osSemaphoreAcquire(sem_can_txHandle, 10) == osOK) {
-                    for (int i = 0; i < 4; i++) {
-                        wait_us_debug = 0;
-                        while (!can2_bus.send_message(wheel_msgs[i])) {
-                            // Microsecond-level busy wait using TIM2 (1 tick = 1 us)
-                            // uint32_t wait_start = TIM2->CNT;
-                            // while ((TIM2->CNT - wait_start) < 10) {
-                            //     // Busy wait before retrying to prevent task starvation
-                            // }
-                            // wait_us_debug += 10;
+                    bool sent[4] = {false, false, false, false};
+                    uint8_t sent_count = 0;
+                    const uint32_t tx_start_tick = TIM2->CNT;
+
+                    while (sent_count < 4) {
+                        for (uint8_t k = 0; k < 4; ++k) {
+                            const uint8_t idx = (tx_rr_start + k) & 0x03;
+                            if (sent[idx]) {
+                                continue;
+                            }
+                            if (can2_bus.send_message(wheel_msgs[idx])) {
+                                sent[idx] = true;
+                                sent_count++;
+                                tx_cmd_sent_count++;
+                            }
+                        }
+
+                        uint32_t wait_us = TIM2->CNT - tx_start_tick;
+                        wait_us_debug = wait_us;
+                        if (sent_count == 4 || wait_us >= kCanTxBudgetUs) {
+                            break;
                         }
                     }
+
+                    tx_cmd_drop_count += (4 - sent_count);
+                    tx_rr_start = (tx_rr_start + 1) & 0x03;
                     osSemaphoreRelease(sem_can_txHandle);
                 }
 
