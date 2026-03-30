@@ -48,10 +48,7 @@ public:
 
     MotorDMH3510* wheel_motors[4];
     DibbleMotorBase* dribbler;
-    PID* wheel_PID_controllers[4];
-    PID* wheel_vel_PID_controllers[4];
     PID* dribbler_PID_controller;
-    TD* wheel_filter[4];
     TD* dribbler_filter;
 
     float motor_vel[4] = {0};

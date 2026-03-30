@@ -3,6 +3,7 @@
 
 #include <cmath>
 
+
 #define PI (3.1415926f)
 
 template <typename T>
@@ -62,20 +63,34 @@ public:
         float output_limit;
         float integ_limit;
         float dt;
+        float back_calc_gain = 0.0f;
     };
 
     PID(const Parameter_t parameter) : parameter_(parameter) {};
     ~PID() = default;
 
     float calc(float ref, float fdb) {
+        constexpr float kEps = 1e-6f;
+
         last_err = err;
         err = ref - fdb;
 
-        diff = (err - last_err) / parameter_.dt;
-        integ = limit<float>(integ + err * parameter_.dt, parameter_.integ_limit / parameter_.ki);
+        const float dt = (parameter_.dt > kEps) ? parameter_.dt : kEps;
+        diff = (err - last_err) / dt;
 
-        output = limit<float>(parameter_.kp * err + parameter_.ki * integ + parameter_.kd * diff,
-                              parameter_.output_limit);
+        if (std::fabs(parameter_.ki) > kEps) {
+            const float integ_pre = integ + err * dt;
+            const float output_pre = parameter_.kp * err + parameter_.ki * integ_pre + parameter_.kd * diff;
+            const float output_sat = limit<float>(output_pre, parameter_.output_limit);
+
+            // Anti-windup by back-calculation: feed saturation residual back to integrator.
+            integ = integ_pre + parameter_.back_calc_gain * (output_sat - output_pre) * dt / parameter_.ki;
+            integ = limit<float>(integ, parameter_.integ_limit / std::fabs(parameter_.ki));
+            output = output_sat;
+        } else {
+            integ = 0.0f;
+            output = limit<float>(parameter_.kp * err + parameter_.kd * diff, parameter_.output_limit);
+        }
 
         return output;
     }
@@ -96,6 +111,110 @@ private:
     float integ = 0.0f;
     float diff = 0.0f;
     float output = 0.0f;    
+};
+
+class ButterworthLowPass2 {
+public:
+    struct Parameter_t {
+        float cutoff_hz;
+        float dt;
+    };
+
+    explicit ButterworthLowPass2(Parameter_t parameter, float init = 0.0f)
+        : parameter_(parameter) {
+        compute_coeffs();
+        reset(init);
+    }
+
+    float filter(float x) {
+        if (!enabled_) {
+            y_ = x;
+            return y_;
+        }
+
+        // Transposed direct-form II implementation.
+        const float y = b0_ * x + z1_;
+        z1_ = b1_ * x - a1_ * y + z2_;
+        z2_ = b2_ * x - a2_ * y;
+        y_ = y;
+        return y_;
+    }
+
+    void set_parameter(Parameter_t parameter) {
+        parameter_ = parameter;
+        compute_coeffs();
+        reset(y_);
+    }
+
+    void reset(float value = 0.0f) {
+        y_ = value;
+        if (!enabled_) {
+            z1_ = 0.0f;
+            z2_ = 0.0f;
+            return;
+        }
+
+        // Make filter output start at `value` for constant input `value`.
+        z1_ = value * (1.0f - b0_);
+        z2_ = value * (b2_ - a2_);
+    }
+
+    float output() const {
+        return y_;
+    }
+
+private:
+    void compute_coeffs() {
+        constexpr float kEps = 1e-6f;
+        constexpr float kQ = 0.70710678f; // 2nd-order Butterworth Q
+        constexpr float kTwoPi = 6.283185307f;
+
+        const float dt = (parameter_.dt > kEps) ? parameter_.dt : kEps;
+        const float fs = 1.0f / dt;
+        const float cutoff = parameter_.cutoff_hz;
+
+        if (cutoff <= kEps || cutoff >= 0.49f * fs) {
+            enabled_ = false;
+            b0_ = 1.0f;
+            b1_ = 0.0f;
+            b2_ = 0.0f;
+            a1_ = 0.0f;
+            a2_ = 0.0f;
+            return;
+        }
+
+        enabled_ = true;
+        const float omega = kTwoPi * cutoff / fs;
+        const float cosw = std::cos(omega);
+        const float sinw = std::sin(omega);
+        const float alpha = sinw / (2.0f * kQ);
+
+        const float b0 = (1.0f - cosw) * 0.5f;
+        const float b1 = 1.0f - cosw;
+        const float b2 = (1.0f - cosw) * 0.5f;
+        const float a0 = 1.0f + alpha;
+        const float a1 = -2.0f * cosw;
+        const float a2 = 1.0f - alpha;
+
+        b0_ = b0 / a0;
+        b1_ = b1 / a0;
+        b2_ = b2 / a0;
+        a1_ = a1 / a0;
+        a2_ = a2 / a0;
+    }
+
+    Parameter_t parameter_;
+    bool enabled_ = false;
+
+    float b0_ = 1.0f;
+    float b1_ = 0.0f;
+    float b2_ = 0.0f;
+    float a1_ = 0.0f;
+    float a2_ = 0.0f;
+
+    float z1_ = 0.0f;
+    float z2_ = 0.0f;
+    float y_ = 0.0f;
 };
 
 class TD {

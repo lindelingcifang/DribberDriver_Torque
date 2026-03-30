@@ -8,6 +8,8 @@ volatile float vx_obs_z2_debug = 0;
 volatile float yaw_obs_z1_debug = 0;
 volatile float yaw_obs_z2_debug = 0;
 volatile float yaw_obs_z3_debug = 0;
+volatile float torque_ff_debug_0 = 0;
+volatile float torque_ff_debug_1 = 0;
 
 MixedLesoChassisController::MixedLesoChassisController() {
     precompute_mappings();
@@ -93,6 +95,8 @@ void MixedLesoChassisController::step(float dt_s) {
         tau = std::clamp(tau, -control_config::kWheelTorqueFfLimitNm, control_config::kWheelTorqueFfLimitNm);
         wheel_torque_ff_output_ports_[wheel] = tau;
     }
+    torque_ff_debug_0 = wheel_torque_ff_output_ports_[0].present().value_or(0.0f);
+    torque_ff_debug_1 = wheel_torque_ff_output_ports_[1].present().value_or(0.0f);
 }
 
 void MixedLesoChassisController::reset() {

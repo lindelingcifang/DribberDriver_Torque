@@ -2,6 +2,7 @@
 #include "freertos_vars.h"
 #include "can_callbacks.h"
 #include "z_main.h"
+#include "iwdg.h"
 #include "Component/control_params.hpp"
 #include <optional>
 
@@ -12,7 +13,7 @@ enum WheelCommandMode : uint8_t {
     kWheelCommandMIT = 1,
 };
 
-static constexpr WheelCommandMode kWheelCommandMode = kWheelCommandVelocity;
+static constexpr WheelCommandMode kWheelCommandMode = kWheelCommandMIT;
 
 struct MITCommandConfig {
     float kp;
@@ -33,6 +34,12 @@ static constexpr MITCommandConfig kMITSafeConfig{
 static constexpr float kRadPerRpm = 3.1415926535f / 30.0f;
 static constexpr float kDegToRad = 3.1415926535f / 180.0f;
 static constexpr uint32_t kCanTxBudgetUs = 400;
+static constexpr float kMITKdRampTimeSec = control_config::kMITKdRampTimeSec;
+static constexpr float kMITKdRampStep =
+    (kMITKdRampTimeSec > 1e-6f) ? (control_config::kControlDtSec / kMITKdRampTimeSec) : 1.0f;
+
+float g_kd_ramp_alpha[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+bool g_wheel_prev_enabled[4] = {false, false, false, false};
 
 WheelMotorBase::Mode active_motor_mode() {
     return (kWheelCommandMode == kWheelCommandMIT)
@@ -46,13 +53,25 @@ bool build_wheel_command(Robot& robot, uint8_t index, bool safe_output, can_Mess
     }
 
     WheelMotorBase* motor = robot.wheel_motors[index];
+    const bool motor_enabled = motor->is_enabled();
+
+    if (!motor_enabled) {
+        g_wheel_prev_enabled[index] = false;
+        g_kd_ramp_alpha[index] = 0.0f;
+    } else if (!g_wheel_prev_enabled[index]) {
+        // Rising edge of enable: restart Kd ramp from zero.
+        g_wheel_prev_enabled[index] = true;
+        g_kd_ramp_alpha[index] = 0.0f;
+    }
+
     const WheelMotorBase::Mode required_mode = active_motor_mode();
     if (motor->get_mode() != required_mode) {
+        motor->reset_wheel_speed_pid();
         motor->build_set_mode_msg(required_mode, out_msg);
         return true;
     }
 
-    out_msg.id = motor->command_can_id() + 0x200;
+    out_msg.id = motor->command_can_id();
     out_msg.isExt = false;
     out_msg.rtr = false;
 
@@ -66,18 +85,36 @@ bool build_wheel_command(Robot& robot, uint8_t index, bool safe_output, can_Mess
         const float velocity_ref = safe_output ? 0.0f : (vel_cmd_rpm * kRadPerRpm);
         const float position_ref = motor->get_angle() * kDegToRad;
         const MITCommandConfig cfg = safe_output ? kMITSafeConfig : kMITRunConfig;
-        motor->pack_mit_data(position_ref, velocity_ref, cfg.kp, cfg.kd, (safe_output ? cfg.torque_ff : torque_ff), tx_data);
+        float kd_cmd = cfg.kd;
+
+        if (!safe_output && motor_enabled) {
+            kd_cmd = cfg.kd * g_kd_ramp_alpha[index];
+            g_kd_ramp_alpha[index] += kMITKdRampStep;
+            if (g_kd_ramp_alpha[index] > 1.0f) {
+                g_kd_ramp_alpha[index] = 1.0f;
+            }
+        }
+
+        if (safe_output) {
+            motor->reset_wheel_speed_pid();
+        }
+        motor->pack_mit_data(position_ref, velocity_ref, cfg.kp, kd_cmd, (safe_output ? cfg.torque_ff : torque_ff), tx_data);
         out_msg.len = 8;
         memcpy(out_msg.buf, tx_data, out_msg.len);
         return true;
     }
 
-    uint8_t tx_data[4] = {0};
-    const float velocity_ref = safe_output ? 0.0f : (vel_cmd_rpm * kRadPerRpm);
-    motor->pack_velocity_data(velocity_ref, tx_data);
-    out_msg.len = 4;
-    memcpy(out_msg.buf, tx_data, out_msg.len);
-    return true;
+    if (kWheelCommandMode == kWheelCommandVelocity) {
+        motor->reset_wheel_speed_pid();
+        uint8_t tx_data[4] = {0};
+        const float velocity_ref = safe_output ? 0.0f : (vel_cmd_rpm * kRadPerRpm);
+        motor->pack_velocity_data(velocity_ref, tx_data);
+        out_msg.len = 4;
+        memcpy(out_msg.buf, tx_data, out_msg.len);
+        return true;
+    }
+
+    return false;
 }
 
 } // namespace
@@ -110,6 +147,9 @@ void motor_init() {
         robot.wheel_motors[i]->build_set_dec_msg(MotorDMH3510::Parameter_t().dec, msg);
         can2_bus.send_message(msg);
         osDelay(20);
+        robot.wheel_motors[i]->build_set_pmax_msg(MotorDMH3510::Parameter_t().pmax, msg);
+        can2_bus.send_message(msg);
+        osDelay(20);
         if (kWheelCommandMode == kWheelCommandVelocity) {
             robot.wheel_motors[i]->build_set_velocity_kp_msg(MotorDMH3510::Parameter_t().kp_asr, msg);
             can2_bus.send_message(msg);
@@ -118,6 +158,9 @@ void motor_init() {
             can2_bus.send_message(msg);
             osDelay(20);
         }
+        // HAL_IWDG_Refresh(&hiwdg);
+        // osDelay(400);
+        // HAL_IWDG_Refresh(&hiwdg);
         robot.wheel_motors[i]->build_enable_msg(msg);
         can2_bus.send_message(msg);
         osDelay(20);
@@ -167,20 +210,8 @@ void StartCrtlTask(void *argument) {
                 can_Message_t wheel_msgs[4];
 
                 for (uint8_t i = 0; i < 4; i++) {
-                    const std::optional<float> wheel_vel_fb =
-                        robot.wheel_motors[i]->velocity_output_port()->any();
-                    const float wheel_vel_rpm =
-                        wheel_vel_fb.has_value() ? *wheel_vel_fb : robot.wheel_motors[i]->get_velocity();
-
-                    robot.wheel_filter[i]->calc(wheel_vel_rpm);
-                    debug_motor_vel[i] = robot.wheel_filter[i]->get_data();
-                    debug_motor_acc[i] = robot.wheel_filter[i]->get_diff() * 3.1415926f / 30.0f;
-                    
                     const bool safe_output = !robot.wheel_motors[i]->is_enabled() || !robot.watchdog_check();
                     build_wheel_command(robot, i, safe_output, wheel_msgs[i]);
-                    if (safe_output) {
-                        robot.wheel_PID_controllers[i]->reset();
-                    }
 
                     
                 }

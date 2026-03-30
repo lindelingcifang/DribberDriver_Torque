@@ -5,6 +5,7 @@
 #include "Communication/can/can_helpers.hpp"
 #include "component.hpp"
 #include <cstdint>
+#include <limits>
 
 class WheelMotorBase {
 public:
@@ -53,6 +54,7 @@ public:
     virtual void build_set_pmax_msg(float pmax, can_Message_t& msg) = 0;
     virtual void build_set_vmax_msg(float vmax, can_Message_t& msg) = 0;
     virtual void build_set_tmax_msg(float tmax, can_Message_t& msg) = 0;
+    virtual void reset_wheel_speed_pid() = 0;
 
     virtual uint32_t command_can_id() const = 0;
     virtual uint32_t feedback_can_id() const { return static_cast<uint32_t>(config_.feedback_id); }
@@ -127,8 +129,8 @@ public:
     struct Parameter_t {
         float acc = 10.0f;
         float dec = -10.0f;
-        float kp_asr = 1.0f;
-        float ki_asr = 1e15f;
+        float kp_asr = 0.0f;
+        float ki_asr = 0.0f;
         float pmax = 12.5f;
         float vmax = 280.0f;
         float tmax = 1.0f;
@@ -154,6 +156,7 @@ public:
     void build_set_tmax_msg(float tmax, can_Message_t& msg);
 
     bool is_writing_register() { return writing_register_; }
+    void reset_wheel_speed_pid() override;
 
     void build_write_register_msg(uint8_t rid, uint32_t data, can_Message_t& msg);
 
@@ -164,6 +167,8 @@ public:
 private:
     State state_ = kStateMotorDisable;
     bool writing_register_ = false;
+    PID wheel_speed_pid_;
+    ButterworthLowPass2 wheel_speed_filter_;
 
     static float uint_to_float(int x_int, float x_min, float x_max, int bits);
 };

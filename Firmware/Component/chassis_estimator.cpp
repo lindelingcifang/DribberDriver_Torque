@@ -7,6 +7,7 @@ volatile float chassis_vx_debug = 0;
 volatile float chassis_vy_debug = 0;
 volatile float chassis_yaw_debug = 0;
 volatile float chassis_omega_z_debug = 0;
+volatile float wheel_vel_0_debug = 0;
 
 namespace {
 
@@ -42,6 +43,7 @@ void ChassisEstimator::step(float dt_s) {
         last_wheel_vel_rpm_[i] = wheel_rpm;
         wheel_vel_rad_s[i] = wheel_rpm * kRpmToRadPerSec;
     }
+    wheel_vel_0_debug = wheel_vel_rad_s[0];
 
     float chassis_vel_meas[3] = {0.0f, 0.0f, 0.0f};
     for (int row = 0; row < 3; ++row) {

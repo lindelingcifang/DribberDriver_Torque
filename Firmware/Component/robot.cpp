@@ -70,14 +70,6 @@ static const DibbleMotorBase::Config_t DRIBBLER_MOTOR_PARAMS = {
     .remove_built_in_reducer = false
 };
 
-// PID parameters for wheel velocity control
-static const PID::Parameter_t WHEEL_VEL_PID_PARAMS[4] = {
-    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = control_config::kControlDtSec},
-    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = control_config::kControlDtSec},
-    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = control_config::kControlDtSec},
-    {.kp = 0, .ki = 0, .kd = 0, .output_limit = 4, .integ_limit = 4, .dt = control_config::kControlDtSec}
-};
-
 // PID parameters for dribbler
 static const PID::Parameter_t DRIBBLER_PID_PARAMS = {
     .kp = 0.001f, .ki = 0.005f, .kd = 0,
@@ -91,18 +83,6 @@ static const TD::Parameter_t DRIBBLER_TD_PARAMS = {
     .is_cycle = false, .cycle_low = -180.0f, .cycle_high = 180.0f
 };
 
-// TD parameters for wheel motors
-static const TD::Parameter_t WHEEL_TD_PARAMS[4] = {
-    {.r = 200000, .h = 0.01f, .dt = control_config::kControlDtSec, .is_cycle = false,
-     .cycle_low = -180.0f, .cycle_high = 180.0f},
-    {.r = 200000, .h = 0.01f, .dt = control_config::kControlDtSec, .is_cycle = false,
-     .cycle_low = -180.0f, .cycle_high = 180.0f},
-    {.r = 200000, .h = 0.01f, .dt = control_config::kControlDtSec, .is_cycle = false,
-     .cycle_low = -180.0f, .cycle_high = 180.0f},
-    {.r = 200000, .h = 0.01f, .dt = control_config::kControlDtSec, .is_cycle = false,
-     .cycle_low = -180.0f, .cycle_high = 180.0f}
-};
-
 // IMU data buffer for transmission
 static float imu_data_buffer[9] = {0};
 
@@ -110,8 +90,6 @@ Robot::Robot() {
     // Initialize wheel motors
     for (int i = 0; i < 4; i++) {
         wheel_motors[i] = new MotorDMH3510(WHEEL_MOTOR_PARAMS[i]);
-        wheel_vel_PID_controllers[i] = new PID(WHEEL_VEL_PID_PARAMS[i]);
-        wheel_filter[i] = new TD(WHEEL_TD_PARAMS[i], 0);
 
         wheel_motors[i]->velocity_cmd_input_port()->connect_to(&motor_vel[i]);
         chassis_estimator.wheel_velocity_input_port(i)->connect_to(wheel_motors[i]->velocity_output_port());
@@ -132,9 +110,6 @@ Robot::Robot() {
 Robot::~Robot() {
     for (int i = 0; i < 4; i++) {
         delete wheel_motors[i];
-        delete wheel_PID_controllers[i];
-        delete wheel_vel_PID_controllers[i];
-        delete wheel_filter[i];
     }
     delete dribbler;
     delete dribbler_PID_controller;
