@@ -9,12 +9,10 @@ class MixedLesoChassisController {
 public:
     MixedLesoChassisController();
 
-    InputPort<float>* wheel_velocity_input_port(std::size_t index) {
-        return (index < wheel_velocity_input_ports_.size()) ? &wheel_velocity_input_ports_[index] : nullptr;
-    }
-
-    InputPort<float>* imu_yaw_input_port() { return &imu_yaw_input_port_; }
-    InputPort<float>* imu_omega_z_input_port() { return &imu_omega_z_input_port_; }
+    InputPort<float>* chassis_vx_input_port() { return &chassis_vx_input_port_; }
+    InputPort<float>* chassis_vy_input_port() { return &chassis_vy_input_port_; }
+    InputPort<float>* chassis_yaw_input_port() { return &chassis_yaw_input_port_; }
+    InputPort<float>* chassis_omega_z_input_port() { return &chassis_omega_z_input_port_; }
 
     OutputPort<float>* wheel_torque_ff_output_port(std::size_t index) {
         return (index < wheel_torque_ff_output_ports_.size()) ? &wheel_torque_ff_output_ports_[index] : nullptr;
@@ -28,9 +26,10 @@ private:
     bool inverse3x3(const float in[3][3], float out[3][3]) const;
     void precompute_mappings();
 
-    std::array<InputPort<float>, 4> wheel_velocity_input_ports_;
-    InputPort<float> imu_yaw_input_port_;
-    InputPort<float> imu_omega_z_input_port_;
+    InputPort<float> chassis_vx_input_port_;
+    InputPort<float> chassis_vy_input_port_;
+    InputPort<float> chassis_yaw_input_port_;
+    InputPort<float> chassis_omega_z_input_port_;
 
     std::array<OutputPort<float>, 4> wheel_torque_ff_output_ports_ = {
         OutputPort<float>(0.0f),
@@ -48,9 +47,9 @@ private:
     float yaw_obs_[3] = {0.0f, 0.0f, 0.0f};
 
     float j1_pinv_[4][3] = {{0.0f}};
-    float j2_pinv_[3][4] = {{0.0f}};
 
-    float last_wheel_vel_rpm_[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    float last_chassis_vx_m_s_ = 0.0f;
+    float last_chassis_vy_m_s_ = 0.0f;
     float last_yaw_rad_ = 0.0f;
     float last_omega_z_rad_s_ = 0.0f;
 };

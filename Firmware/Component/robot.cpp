@@ -114,9 +114,14 @@ Robot::Robot() {
         wheel_filter[i] = new TD(WHEEL_TD_PARAMS[i], 0);
 
         wheel_motors[i]->velocity_cmd_input_port()->connect_to(&motor_vel[i]);
-        chassis_controller.wheel_velocity_input_port(i)->connect_to(wheel_motors[i]->velocity_output_port());
+        chassis_estimator.wheel_velocity_input_port(i)->connect_to(wheel_motors[i]->velocity_output_port());
         wheel_motors[i]->torque_ff_cmd_input_port()->connect_to(chassis_controller.wheel_torque_ff_output_port(i));
     }
+
+    chassis_controller.chassis_vx_input_port()->connect_to(chassis_estimator.chassis_vx_output_port());
+    chassis_controller.chassis_vy_input_port()->connect_to(chassis_estimator.chassis_vy_output_port());
+    chassis_controller.chassis_yaw_input_port()->connect_to(chassis_estimator.chassis_yaw_output_port());
+    chassis_controller.chassis_omega_z_input_port()->connect_to(chassis_estimator.chassis_omega_z_output_port());
 
     // Initialize dribbler
     dribbler = new MotorM2006(DRIBBLER_MOTOR_PARAMS);
@@ -223,9 +228,9 @@ void Robot::motion_planner(const double _dt) {
     robot_real_vx_debug = robot_real_vel[0];
 }
 
-void Robot::bind_imu_ports(IMU& imu_ref) {
-    chassis_controller.imu_yaw_input_port()->connect_to(imu_ref.yaw_port());
-    chassis_controller.imu_omega_z_input_port()->connect_to(imu_ref.omega_z_port());
+void Robot::bind_estimator_imu_ports(IMU& imu_ref) {
+    chassis_estimator.imu_yaw_input_port()->connect_to(imu_ref.yaw_port());
+    chassis_estimator.imu_omega_z_input_port()->connect_to(imu_ref.omega_z_port());
 }
 
 void Robot::update_torque_feedforward(const double _dt) {
@@ -235,6 +240,7 @@ void Robot::update_torque_feedforward(const double _dt) {
     }
 
     chassis_controller.set_reference(robot_real_vel, robot_acc);
+    chassis_estimator.step(dt_s);
     chassis_controller.step(dt_s);
 
     for (uint8_t i = 0; i < 4; ++i) {

@@ -135,7 +135,7 @@ void StartCrtlTask(void *argument) {
     // Wait for system initialization
     osDelay(100);
 
-    robot.bind_imu_ports(imu);
+    robot.bind_estimator_imu_ports(imu);
 
     // Initialize motors (set control mode, PID gains, enable)
     motor_init();

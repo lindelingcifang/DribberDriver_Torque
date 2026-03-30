@@ -128,7 +128,7 @@ public:
         float acc = 10.0f;
         float dec = -10.0f;
         float kp_asr = 1.0f;
-        float ki_asr = 50000.0f;
+        float ki_asr = 1e15f;
         float pmax = 12.5f;
         float vmax = 280.0f;
         float tmax = 1.0f;
