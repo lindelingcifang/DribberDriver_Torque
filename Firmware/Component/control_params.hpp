@@ -8,13 +8,13 @@ namespace control_config {
 inline constexpr float kControlDtSec = static_cast<float>(TIM2_PERIOD_CLOCKS) / 1000000.0f;
 inline constexpr float kPi = 3.1415926535f;
 
-inline constexpr float kAccThresholdX = 8.0f;
-inline constexpr float kAccThresholdY = 8.0f;
+inline constexpr float kAccThresholdX = 7.0f;
+inline constexpr float kAccThresholdY = 7.0f;
 inline constexpr float kAccThresholdYaw = 40.0f;
 
-inline constexpr float kVelErrGainX = 1.0f;
-inline constexpr float kVelErrGainY = 1.0f;
-inline constexpr float kVelErrGainYaw = 2.0f;
+inline constexpr float kVelErrGainX = 5.0f;
+inline constexpr float kVelErrGainY = 5.0f;
+inline constexpr float kVelErrGainYaw = 20.0f;
 
 inline constexpr float kJerkLimitX = 200.0f;
 inline constexpr float kJerkLimitY = 200.0f;
@@ -37,16 +37,18 @@ inline constexpr float kVelFeedbackGainYaw = 0.02f;
 
 inline constexpr float kWheelTorqueFfLimitNm = 0.00f;
 
-inline constexpr float kWheelSpeedPidKp = 0.0f;
-inline constexpr float kWheelSpeedPidKi = 0.0f;
+inline constexpr float kWheelSpeedPidKp = 0.65f;
+inline constexpr float kWheelSpeedPidKi = 4.0f;
 inline constexpr float kWheelSpeedPidKd = 0.0f;
-inline constexpr float kWheelSpeedPidBackCalcGain = 1.0f;
-inline constexpr float kWheelSpeedPidOutputLimitNm = 0.20f;
-inline constexpr float kWheelSpeedPidIntegLimitNm = 0.20f;
-inline constexpr float kWheelSpeedFilterCutoffHz = 40.0f;
+inline constexpr float kWheelSpeedPidBackCalcGain = 0.3f;
+inline constexpr float kWheelSpeedPidOutputLimitNm = 0.80f;
+inline constexpr float kWheelSpeedPidIntegLimitNm = 0.80f;
+inline constexpr float kWheelSpeedPidKpRampTimeSec = 1.5f;
+inline constexpr float kWheelSpeedPllBandwidth = 75.0f;
+inline constexpr float kWheelSpeedPllZeroSnapEpsRpm = 0.1f;
 
 inline constexpr float kMITRunKp = 0.0f;
-inline constexpr float kMITRunKd = 0.075f;
+inline constexpr float kMITRunKd = 0.07f;
 inline constexpr float kMITRunTorqueFf = 0.0f;
 inline constexpr float kMITKdRampTimeSec = 1.0f;
 

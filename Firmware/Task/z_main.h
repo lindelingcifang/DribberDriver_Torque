@@ -4,6 +4,8 @@
 // Hardware configuration
 #include "board.h"
 
+#include "main.h"
+
 #include "Task/can_callbacks.h"
 
 #ifdef __cplusplus

@@ -104,6 +104,10 @@ public:
         output = 0.0f;
     }
 
+    float get_integ() const {
+        return integ;
+    }
+
 private:
     Parameter_t parameter_;
     float err = 0.0f;

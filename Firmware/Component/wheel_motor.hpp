@@ -131,7 +131,7 @@ public:
         float dec = -10.0f;
         float kp_asr = 0.0f;
         float ki_asr = 0.0f;
-        float pmax = 12.5f;
+        float pmax = 3.1415926535f;
         float vmax = 280.0f;
         float tmax = 1.0f;
     };
@@ -168,7 +168,22 @@ private:
     State state_ = kStateMotorDisable;
     bool writing_register_ = false;
     PID wheel_speed_pid_;
-    ButterworthLowPass2 wheel_speed_filter_;
+    float wheel_speed_pid_kp_alpha_ = 0.0f;
+    bool wheel_speed_pid_prev_enabled_ = false;
+
+    void update_wheel_speed_pll_gains();
+    void update_wheel_speed_pid_kp_ramp();
+    void reset_wheel_speed_pll(float measured_pos_rad, bool mark_prev_enabled);
+    void update_wheel_speed_pll_from_pos(float measured_pos_rad, bool enabled_now);
+    static float wrap_pm_pi(float angle_rad);
+
+    float pll_kp_ = 0.0f;
+    float pll_ki_ = 0.0f;
+    float pll_pos_est_rad_ = 0.0f;
+    float pll_vel_est_rad_s_ = 0.0f;
+    bool pll_initialized_ = false;
+    bool pll_prev_enabled_ = false;
+    bool pll_gain_unstable_ = false;
 
     static float uint_to_float(int x_int, float x_min, float x_max, int bits);
 };

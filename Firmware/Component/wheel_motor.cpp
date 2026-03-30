@@ -1,10 +1,12 @@
 #include "wheel_motor.hpp"
 #include "control_params.hpp"
+#include <cmath>
 #include <cstring>
 
 // Debug
 volatile float torque_cmd_debug = 0;
 volatile float wheel_vel_raw_debug = 0;
+volatile float wheel_integ_debug = 0;
 
 namespace {
 
@@ -32,10 +34,9 @@ static const PID::Parameter_t kWheelSpeedPidParam = {
     .back_calc_gain = control_config::kWheelSpeedPidBackCalcGain,
 };
 
-static const ButterworthLowPass2::Parameter_t kWheelSpeedFilterParam = {
-    .cutoff_hz = control_config::kWheelSpeedFilterCutoffHz,
-    .dt = control_config::kControlDtSec,
-};
+static constexpr float kWheelSpeedPidKpRampTimeSec = control_config::kWheelSpeedPidKpRampTimeSec;
+static constexpr float kWheelSpeedPidKpRampStep =
+    (kWheelSpeedPidKpRampTimeSec > 1e-6f) ? (control_config::kControlDtSec / kWheelSpeedPidKpRampTimeSec) : 1.0f;
 
 static constexpr float kPi = 3.1415926535f;
 
@@ -65,8 +66,9 @@ void WheelMotorBase::reset_ports() {
 
 MotorDMH3510::MotorDMH3510(const Config_t& config)
         : WheelMotorBase(kTypeDMH3510, config, motor_info_DMH3510),
-            wheel_speed_pid_(kWheelSpeedPidParam),
-            wheel_speed_filter_(kWheelSpeedFilterParam, 0.0f) {}
+            wheel_speed_pid_(kWheelSpeedPidParam) {
+    update_wheel_speed_pll_gains();
+}
 
 void MotorDMH3510::pack_velocity_data(float velocity, uint8_t* tx_data) {
     writing_register_ = false;
@@ -80,9 +82,15 @@ void MotorDMH3510::pack_mit_data(float position, float velocity, float kp, float
     static constexpr float kMITKdMin = 0.0f;
     static constexpr float kMITKdMax = 5.0f;
 
+    update_wheel_speed_pid_kp_ramp();
+
     // velocity uses rad/s in MIT command; convert feedback from rpm to rad/s.
     const float velocity_feedback = vel_ * kPi / 30.0f;
     const float torque_pid = wheel_speed_pid_.calc(velocity, velocity_feedback);
+    if (config_.feedback_id == 1) {
+        wheel_integ_debug = wheel_speed_pid_.get_integ();
+    }
+    
     float torque_cmd = torque_ff + torque_pid;
     if (torque_cmd > parameter_.tmax) {
         torque_cmd = parameter_.tmax;
@@ -112,12 +120,95 @@ void MotorDMH3510::pack_mit_data(float position, float velocity, float kp, float
     writing_register_ = false;
 }
 
+void MotorDMH3510::update_wheel_speed_pid_kp_ramp() {
+    if (!enabled_) {
+        wheel_speed_pid_prev_enabled_ = false;
+        wheel_speed_pid_kp_alpha_ = 0.0f;
+    } else if (!wheel_speed_pid_prev_enabled_) {
+        // Rising edge of enable: restart wheel-speed PID Kp from zero.
+        wheel_speed_pid_prev_enabled_ = true;
+        wheel_speed_pid_kp_alpha_ = 0.0f;
+    }
+
+    PID::Parameter_t param = kWheelSpeedPidParam;
+    param.kp = kWheelSpeedPidParam.kp * wheel_speed_pid_kp_alpha_;
+    wheel_speed_pid_.set_parameter(param);
+
+    if (enabled_) {
+        wheel_speed_pid_kp_alpha_ += kWheelSpeedPidKpRampStep;
+        if (wheel_speed_pid_kp_alpha_ > 1.0f) {
+            wheel_speed_pid_kp_alpha_ = 1.0f;
+        }
+    }
+}
+
 float MotorDMH3510::uint_to_float(int x_int, float x_min, float x_max, int bits) {
     const float span = x_max - x_min;
     if (span == 0.0f) {
         return x_min;
     }
     return static_cast<float>(x_int) * span / static_cast<float>((1 << bits) - 1) + x_min;
+}
+
+float MotorDMH3510::wrap_pm_pi(float angle_rad) {
+    while (angle_rad > kPi) {
+        angle_rad -= 2.0f * kPi;
+    }
+    while (angle_rad < -kPi) {
+        angle_rad += 2.0f * kPi;
+    }
+    return angle_rad;
+}
+
+void MotorDMH3510::update_wheel_speed_pll_gains() {
+    pll_kp_ = 2.0f * control_config::kWheelSpeedPllBandwidth;
+    pll_ki_ = 0.25f * pll_kp_ * pll_kp_;
+
+    const float dt = control_config::kControlDtSec;
+    pll_gain_unstable_ = !(dt * pll_kp_ < 1.0f);
+    if (pll_gain_unstable_ && dt > 0.0f) {
+        pll_kp_ = 0.95f / dt;
+        pll_ki_ = 0.25f * pll_kp_ * pll_kp_;
+    }
+}
+
+void MotorDMH3510::reset_wheel_speed_pll(float measured_pos_rad, bool mark_prev_enabled) {
+    pll_pos_est_rad_ = measured_pos_rad;
+    pll_vel_est_rad_s_ = 0.0f;
+    pll_initialized_ = false;
+    pll_prev_enabled_ = mark_prev_enabled;
+}
+
+void MotorDMH3510::update_wheel_speed_pll_from_pos(float measured_pos_rad, bool enabled_now) {
+    const float dt = control_config::kControlDtSec;
+    if (dt <= 0.0f) {
+        pll_vel_est_rad_s_ = 0.0f;
+        return;
+    }
+
+    if (!enabled_now) {
+        reset_wheel_speed_pll(measured_pos_rad, false);
+        return;
+    }
+
+    if (!pll_initialized_ || !pll_prev_enabled_) {
+        pll_pos_est_rad_ = measured_pos_rad;
+        pll_vel_est_rad_s_ = 0.0f;
+        pll_initialized_ = true;
+    }
+
+    const float pos_pred = pll_pos_est_rad_ + dt * pll_vel_est_rad_s_;
+    const float pos_err = wrap_pm_pi(measured_pos_rad - pos_pred);
+
+    pll_pos_est_rad_ = pos_pred + dt * pll_kp_ * pos_err;
+    pll_vel_est_rad_s_ += dt * pll_ki_ * pos_err;
+
+    const float zero_snap_eps_rad_s = control_config::kWheelSpeedPllZeroSnapEpsRpm * kPi / 30.0f;
+    if (std::fabs(pll_vel_est_rad_s_) < zero_snap_eps_rad_s) {
+        pll_vel_est_rad_s_ = 0.0f;
+    }
+
+    pll_prev_enabled_ = true;
 }
 
 void MotorDMH3510::parse_feedback_data(const uint8_t rx_data[8]) {
@@ -128,23 +219,19 @@ void MotorDMH3510::parse_feedback_data(const uint8_t rx_data[8]) {
     const uint16_t vel_uint = (rx_data[3] << 4) | (rx_data[4] >> 4);
     const uint16_t tor_uint = ((rx_data[4] & 0x0F) << 8) | rx_data[5];
 
-    float pos = uint_to_float(pos_uint, -parameter_.pmax, parameter_.pmax, 16);
-    float vel = uint_to_float(vel_uint, -parameter_.vmax, parameter_.vmax, 12);
+    const float pos = uint_to_float(pos_uint, -parameter_.pmax, parameter_.pmax, 16);
+    const float vel = uint_to_float(vel_uint, -parameter_.vmax, parameter_.vmax, 12);
     torque_ = uint_to_float(tor_uint, -parameter_.tmax, parameter_.tmax, 12) * config_.direction;
 
-    angle_ = config_.direction * pos * 180.0f / 3.1415926535f;
-    const float vel_rpm_raw = config_.direction * vel * 30.0f / 3.1415926535f;
+    const float measured_pos_rad = config_.direction * pos;
+    angle_ = measured_pos_rad * 180.0f / kPi;
     if (config_.feedback_id == 1) {
         wheel_vel_raw_debug = config_.direction * vel;
     }
-    if (state_ == kStateMotorEnable) {
-        vel_ = wheel_speed_filter_.filter(vel_rpm_raw);
-    } else {
-        wheel_speed_filter_.reset(vel_rpm_raw);
-        vel_ = vel_rpm_raw;
-    }
 
     enabled_ = (state_ == kStateMotorEnable);
+    update_wheel_speed_pll_from_pos(measured_pos_rad, enabled_);
+    vel_ = enabled_ ? (pll_vel_est_rad_s_ * 30.0f / kPi) : 0.0f;
     publish_feedback_ports();
 }
 
@@ -155,6 +242,7 @@ void MotorDMH3510::build_set_mode_msg(Mode mode, can_Message_t& msg) {
     if (mode != kModeMITControl) {
         reset_wheel_speed_pid();
     }
+    reset_wheel_speed_pll(0.0f, false);
     mode_ = static_cast<Mode>(mode);
     build_write_register_msg(0x0A, static_cast<uint32_t>(mode), msg);
 }
@@ -179,6 +267,7 @@ void MotorDMH3510::build_enable_msg(can_Message_t& msg) {
 void MotorDMH3510::build_disable_msg(can_Message_t& msg) {
     writing_register_ = false;
     reset_wheel_speed_pid();
+    reset_wheel_speed_pll(0.0f, false);
 
     msg.id = config_.control_id;
     msg.isExt = false;
@@ -196,10 +285,13 @@ void MotorDMH3510::build_disable_msg(can_Message_t& msg) {
 
 void MotorDMH3510::reset_wheel_speed_pid() {
     wheel_speed_pid_.reset();
+    wheel_speed_pid_kp_alpha_ = 0.0f;
+    wheel_speed_pid_prev_enabled_ = false;
 }
 
 void MotorDMH3510::build_clear_error_msg(can_Message_t& msg) {
     writing_register_ = false;
+    reset_wheel_speed_pll(0.0f, false);
 
     msg.id = config_.control_id;
     msg.isExt = false;
