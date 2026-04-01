@@ -91,7 +91,7 @@ bool board_init() {
     // Subscribe to optical flow sensor (CAN1, ID 0x300)
     MsgIdFilterSpecs optflow_filter;
     optflow_filter.id = (uint16_t)0x300;
-    optflow_filter.mask = 0x7FF;  // Match exact ID
+    optflow_filter.mask = 0x000;  // Match exact ID
     optflow_filter.fifo = CAN_RX_FIFO0;
     can1_bus.subscribe(optflow_filter, on_optflow_rx, nullptr, nullptr);
     

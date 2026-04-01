@@ -8,6 +8,10 @@
 
 #include "board.h"
 
+// 用于在 Ozone 中观察特定 ID 的 CAN 报文
+can_Message_t g_debug_msg_0x281;
+// 用于在 Ozone 中观察是否收到任意 CAN 报文的计数器
+uint32_t g_can_rx_count = 0;
 
 bool ZCAN::apply_config() {
     config_.parent = this;
@@ -66,10 +70,18 @@ void ZCAN::process_rx_fifo(uint32_t fifo) {
         can_Message_t rxmsg;
         HAL_CAN_GetRxMessage(handle_, fifo, &header, rxmsg.buf);
 
+        // --- 增加全局接收计数，通过变量是否增加来判断有没有收到报文 ---
+        g_can_rx_count++;
+
         rxmsg.isExt = header.IDE;
         rxmsg.id = rxmsg.isExt ? header.ExtId : header.StdId;  // If it's an extended message, pass the extended ID
         rxmsg.len = header.DLC;
         rxmsg.rtr = header.RTR;
+
+        // --- 提取 0x281 报文方便 Ozone 查看 ---
+        if (rxmsg.id == 0x281) {
+            g_debug_msg_0x281 = rxmsg;
+        }
 
         // TODO: this could be optimized with an ahead-of-time computed
         // index-to-filter map
